@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'contact_page.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -12,8 +15,14 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
 
-  void _login() {
+  Future<void> _login() async {
+    // Validate form first
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     // Show a SnackBar if either field is empty.
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -25,12 +34,64 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    // If the form is valid, navigate to the Contacts page.
-    if (_formKey.currentState!.validate()) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const ContactsPage()),
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Make API call to your auth endpoint
+      final response = await http.post(
+        Uri.parse('http://localhost:8000/contact/token/'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'username': _emailController.text,
+          'password': _passwordController.text,
+        }),
       );
+
+      if (response.statusCode == 200) {
+        // Parse the response to get the JWT token
+        final Map<String, dynamic> data = json.decode(response.body);
+        final String token = data['access']?? '';
+        
+        // Store the token securely using shared_preferences
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('jwt_token', token);
+        
+        // Navigate to the Contacts page
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const ContactsPage()),
+          );
+        }
+      } else {
+        // Handle authentication error
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Authentication failed: ${response.body}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Handle network or other errors
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -138,7 +199,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: _login,
+                            onPressed: _isLoading ? null : _login,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFFC5CAE9),
                               padding: const EdgeInsets.symmetric(vertical: 18),
@@ -146,14 +207,18 @@ class _LoginScreenState extends State<LoginScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            child: const Text(
-                              'Login',
-                              style: TextStyle(
-                                color: Color(0xFF283593),
-                                fontWeight: FontWeight.w900,
-                                fontSize: 22,
-                              ),
-                            ),
+                            child: _isLoading
+                                ? const CircularProgressIndicator(
+                                    color: Color(0xFF283593),
+                                  )
+                                : const Text(
+                                    'Login',
+                                    style: TextStyle(
+                                      color: Color(0xFF283593),
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 22,
+                                    ),
+                                  ),
                           ),
                         ),
                         const SizedBox(height: 20),
