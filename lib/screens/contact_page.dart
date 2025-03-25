@@ -14,7 +14,7 @@ class _ContactsPageState extends State<ContactsPage> {
   final Color primaryColor = const Color(0xFF283593);
   
   // Selected tab
-  ContactType _selectedTab = ContactType.personal;
+  ContactType _selectedTab = ContactType.all;
   
   // List to store contacts
   List<Contact> _contacts = [];
@@ -104,7 +104,7 @@ class _ContactsPageState extends State<ContactsPage> {
                   child: GestureDetector(
                     onTap: () {
                       setState(() {
-                        _selectedTab = ContactType.office;
+                        _selectedTab = ContactType.primary;
                       });
                     },
                     child: Container(
@@ -113,15 +113,15 @@ class _ContactsPageState extends State<ContactsPage> {
                         border: const Border(
                           right: BorderSide(color: Colors.grey, width: 0.5),
                         ),
-                        color: _selectedTab == ContactType.office 
+                        color: _selectedTab == ContactType.primary 
                             ? primaryColor.withOpacity(0.1) 
                             : Colors.transparent,
                       ),
                       child: Center(
                         child: Text(
-                          'Office',
+                          'Primary',
                           style: TextStyle(
-                            color: _selectedTab == ContactType.office 
+                            color: _selectedTab == ContactType.primary 
                                 ? primaryColor 
                                 : Colors.grey,
                             fontWeight: FontWeight.w500,
@@ -135,19 +135,19 @@ class _ContactsPageState extends State<ContactsPage> {
                   child: GestureDetector(
                     onTap: () {
                       setState(() {
-                        _selectedTab = ContactType.personal;
+                        _selectedTab = ContactType.all;
                       });
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      color: _selectedTab == ContactType.personal 
+                      color: _selectedTab == ContactType.all 
                           ? primaryColor.withOpacity(0.1) 
                           : Colors.transparent,
                       child: Center(
                         child: Text(
-                          'Personal',
+                          'All Contacts',
                           style: TextStyle(
-                            color: _selectedTab == ContactType.personal 
+                            color: _selectedTab == ContactType.all
                                 ? primaryColor 
                                 : Colors.grey,
                             fontWeight: FontWeight.w500,
@@ -333,92 +333,155 @@ class _ContactsPageState extends State<ContactsPage> {
     );
   }
 
-  // Dialog to edit an existing contact
-  void _showEditContactDialog(BuildContext context, Contact contact) async {
-    final nameController = TextEditingController(text: contact.name);
-    final phoneController = TextEditingController(text: contact.phoneNumber);
-    final emailController = TextEditingController(text: contact.email ?? '');
-    ContactType selectedType = contact.type;
+void _showEditContactDialog(BuildContext context, Contact contact) async {
+  final nameController = TextEditingController(text: contact.name);
+  final phoneController = TextEditingController(text: contact.phoneNumber);
+  final emailController = TextEditingController(text: contact.email ?? '');
+  final referredByController = TextEditingController(text: contact.referredBy ?? '');
+  
+  ContactType selectedType = contact.type;
+  int? priority = contact.priority;
+  List<Contact> primaryContacts = [];
 
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Edit Contact", style: TextStyle(color: primaryColor)),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'Name'),
-              ),
-              TextField(
-                controller: phoneController,
-                decoration: const InputDecoration(labelText: 'Phone Number'),
-                keyboardType: TextInputType.phone,
-              ),
-              TextField(
-                controller: emailController,
-                decoration: const InputDecoration(labelText: 'Email (Optional)'),
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<ContactType>(
-                value: selectedType,
-                decoration: const InputDecoration(labelText: 'Contact Type'),
-                items: ContactType.values.map((type) {
-                  return DropdownMenuItem(
-                    value: type,
-                    child: Text(type.toString().split('.').last.capitalize()),
-                  );
-                }).toList(),
+  // Load primary contacts for referred by dropdown
+  primaryContacts = await ContactService.getContactsByType(ContactType.primary);
+
+  await showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text("Edit Contact", style: TextStyle(color: primaryColor)),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: 'Name'),
+            ),
+            TextField(
+              controller: phoneController,
+              decoration: const InputDecoration(labelText: 'Phone Number'),
+              keyboardType: TextInputType.phone,
+            ),
+            TextField(
+              controller: emailController,
+              decoration: const InputDecoration(labelText: 'Email (Optional)'),
+              keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<ContactType>(
+              value: selectedType,
+              decoration: const InputDecoration(labelText: 'Contact Type'),
+              items: ContactType.values.map((type) {
+                return DropdownMenuItem(
+                  value: type,
+                  child: Text(type.toString().split('.').last.capitalize()),
+                );
+              }).toList(),
+              onChanged: (value) {
+                if (value != null) {
+                  selectedType = value;
+                }
+              },
+            ),
+            
+            // Priority field for primary contacts
+            if (selectedType == ContactType.primary) 
+              DropdownButtonFormField<int>(
+                value: priority,
+                decoration: const InputDecoration(labelText: 'Priority'),
+                items: List.generate(5, (index) => index + 1)
+                    .map((priorityValue) => DropdownMenuItem(
+                          value: priorityValue,
+                          child: Text(priorityValue.toString()),
+                        ))
+                    .toList(),
                 onChanged: (value) {
-                  if (value != null) {
-                    selectedType = value;
-                  }
+                  priority = value;
                 },
               ),
-            ],
-          ),
+            
+            // Referred by field for all contacts
+            if (selectedType == ContactType.all)
+              DropdownButtonFormField<String>(
+                value: contact.referredBy,
+                decoration: const InputDecoration(labelText: 'Referred By'),
+                items: [
+                  const DropdownMenuItem(
+                    value: '',
+                    child: Text('None'),
+                  ),
+                  ...primaryContacts.map((primaryContact) => 
+                    DropdownMenuItem(
+                      value: primaryContact.id,
+                      child: Text(primaryContact.name),
+                    )
+                  ).toList(),
+                ],
+                onChanged: (value) {
+                  referredByController.text = value ?? '';
+                },
+              ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text("CANCEL"),
-          ),
-          TextButton(
-            onPressed: () async {
-              if (nameController.text.isEmpty || phoneController.text.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Name and phone number are required"))
-                );
-                return;
-              }
-              
-              final updatedContact = Contact(
-                id: contact.id,
-                name: nameController.text,
-                phoneNumber: phoneController.text,
-                email: emailController.text.isEmpty ? null : emailController.text,
-                avatarUrl: contact.avatarUrl,
-                hasMessages: contact.hasMessages,
-                type: selectedType,
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text("CANCEL"),
+        ),
+        TextButton(
+          onPressed: () async {
+            if (nameController.text.isEmpty || phoneController.text.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Name and phone number are required"))
               );
-              
+              return;
+            }
+
+            // Validate priority for primary contacts
+            if (selectedType == ContactType.primary && priority == null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Priority is required for primary contacts"))
+              );
+              return;
+            }
+
+            final updatedContact = Contact(
+              id: contact.id,
+              name: nameController.text,
+              phoneNumber: phoneController.text,
+              email: emailController.text.isEmpty ? null : emailController.text,
+              avatarUrl: contact.avatarUrl,
+              hasMessages: contact.hasMessages,
+              type: selectedType,
+              priority: selectedType == ContactType.primary ? priority : null,
+              referredBy: selectedType == ContactType.all && referredByController.text.isNotEmpty 
+                  ? referredByController.text 
+                  : null,
+            );
+
+            try {
               await ContactService.updateContact(updatedContact);
               await _loadContacts();
-              
               if (context.mounted) {
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text("Contact updated successfully"))
                 );
               }
-            },
-            child: const Text("SAVE"),
-          ),
-        ],
-      ),
-    );
-  }
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Error updating contact: ${e.toString()}"))
+                );
+              }
+            }
+          },
+          child: const Text("SAVE"),
+        ),
+      ],
+    ),
+  );
+}
 }
