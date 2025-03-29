@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'contact_page.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -14,7 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
 
-  void _login() {
+  Future<void> _login() async {
     // Validate form first
     if (!_formKey.currentState!.validate()) {
       return;
@@ -35,18 +38,61 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
     });
 
-    // Simulate a successful login without JWT authentication
-    Future.delayed(const Duration(seconds: 2), () {
+    try {
+      // Make API call to your auth endpoint
+      final response = await http.post(
+        Uri.parse('http://51.21.152.136:8000/contact/token/'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'username': _emailController.text,
+          'password': _passwordController.text,
+        }),
+      );
+      response.statusCode == 200;
+      if (response.statusCode == 200) {
+        // Parse the response to get the JWT token
+        final Map<String, dynamic> data = json.decode(response.body);
+        final String token = data['access']?? '';
+        
+        // Store the token securely using shared_preferences
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('jwt_token', token);
+        
+        // Navigate to the Contacts page
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const ContactsPage()),
+          );
+        }
+      } else {
+        // Handle authentication error
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Authentication failed: ${response.body}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Handle network or other errors
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const ContactsPage()),
-        );
       }
-    });
+    }
   }
 
   @override

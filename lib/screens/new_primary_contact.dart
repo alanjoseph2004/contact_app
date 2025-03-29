@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'new_primary_contact_ui.dart';
 
 class NewPrimaryContactPage extends StatefulWidget {
   const NewPrimaryContactPage({super.key});
@@ -21,426 +25,376 @@ class _NewPrimaryContactPageState extends State<NewPrimaryContactPage> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
-  final TextEditingController _cityController = TextEditingController();
-  final TextEditingController _constituencyController = TextEditingController();
 
-  // Dropdown values
-  String? _selectedConnection;
-  int _selectedPriority = 5;
+  // API data lists
+  List<Map<String, dynamic>> _connections = [];
+  List<Map<String, dynamic>> _constituencies = [];
   
-  // Connections list
-  final List<String> _connections = [
-    'Friend',
-    'Family', 
-    'Political Relation',
-    'Celebrity',
-    'Other'
-  ];
+  // Tag data structure
+  List<Map<String, dynamic>> _tagCategories = [];
+  List<Map<String, dynamic>> _availableTagNames = []; // Available tag names for selected category
+  
+  // Selected values
+  int? _selectedConnection;
+  int _selectedPriority = 5;
+  int? _selectedCity;
+  int? _selectedConstituency;
+  int? _selectedTagCategory;
+  int? _selectedTagName;
 
-  List<int> _priorityLevels = List.generate(10, (index) => index + 1);
+  // Available cities based on selected constituency
+  List<Map<String, dynamic>> _availableCities = [];
 
-  // Tags
-  List<Map<String, String>> _tags = [];
-  final TextEditingController _tagNameController = TextEditingController();
-  final TextEditingController _tagCategoryController = TextEditingController();
+  final List<int> _priorityLevels = List.generate(5, (index) => index + 1);
+
+  // Selected tags
+  final List<Map<String, dynamic>> _tags = [];
+
+  bool _isLoading = false;
+  bool _isInitialLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    // Set initial selected connection to null or first item
-    _selectedConnection = _connections.first;
+    _loadInitialData();
+  }
+  
+  // Load all necessary data from APIs
+  Future<void> _loadInitialData() async {
+    setState(() {
+      _isInitialLoading = true;
+    });
+    
+    try {
+      await Future.wait([
+        _fetchConnections(),
+        _fetchConstituencies(),
+        _fetchTagData(),
+      ]);
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to load initial data: ${e.toString()}';
+      });
+    } finally {
+      setState(() {
+        _isInitialLoading = false;
+      });
+    }
+  }
+
+  // API Call to fetch connections
+  Future<void> _fetchConnections() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('jwt_token');
+
+    if (token == null || token.isEmpty) {
+      throw Exception("JWT token is missing");
+    }
+
+    final response = await http.get(
+      Uri.parse('http://51.21.152.136:8000/contact/all-connections/'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      setState(() {
+        _connections = data.map((item) => {
+          'id': item['id'],
+          'name': item['connection'],
+        }).toList();
+        
+        if (_connections.isNotEmpty) {
+          _selectedConnection = _connections.first['id'];
+        }
+      });
+    } else {
+      throw Exception('Failed to load connections');
+    }
+  }
+
+  // API Call to fetch constituencies with cities
+  Future<void> _fetchConstituencies() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('jwt_token');
+
+    if (token == null || token.isEmpty) {
+      throw Exception("JWT token is missing");
+    }
+
+    final response = await http.get(
+      Uri.parse('http://51.21.152.136:8000/contact/all-cities/'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      setState(() {
+        _constituencies = data.map((item) => {
+          'id': item['id'],
+          'name': item['constituency'],
+          'cities': List<Map<String, dynamic>>.from(
+            item['cities'].map((city) => {
+              'id': city['id'],
+              'name': city['city'],
+            })
+          ),
+        }).toList();
+      });
+    } else {
+      throw Exception('Failed to load constituencies');
+    }
+  }
+
+  // Update available cities when constituency is selected
+  void _updateAvailableCities() {
+    if (_selectedConstituency != null) {
+      final constituency = _constituencies.firstWhere(
+        (c) => c['id'] == _selectedConstituency,
+        orElse: () => {'cities': []},
+      );
+      
+      setState(() {
+        _availableCities = List<Map<String, dynamic>>.from(constituency['cities'] ?? []);
+        _selectedCity = null; // Reset selected city
+      });
+    } else {
+      setState(() {
+        _availableCities = [];
+        _selectedCity = null;
+      });
+    }
+  }
+
+  // API Call to fetch tag data (both categories and tags)
+  Future<void> _fetchTagData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('jwt_token');
+
+    if (token == null || token.isEmpty) {
+      throw Exception("JWT token is missing");
+    }
+
+    final response = await http.get(
+      Uri.parse('http://51.21.152.136:8000/contact/all-tags/'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      setState(() {
+        _tagCategories = data.map((category) => {
+          'id': category['id'],
+          'name': category['tag_category'],
+          'tags': List<Map<String, dynamic>>.from(
+            category['tags'].map((tag) => {
+              'id': tag['id'],
+              'name': tag['tag_name'],
+            })
+          ),
+        }).toList();
+      });
+    } else {
+      throw Exception('Failed to load tag data');
+    }
+  }
+
+  // Update available tag names when category is selected
+  void _updateAvailableTagNames() {
+    if (_selectedTagCategory != null) {
+      final category = _tagCategories.firstWhere(
+        (c) => c['id'] == _selectedTagCategory,
+        orElse: () => {'tags': []},
+      );
+      
+      setState(() {
+        _availableTagNames = List<Map<String, dynamic>>.from(category['tags'] ?? []);
+        _selectedTagName = null; // Reset selected tag name
+      });
+    } else {
+      setState(() {
+        _availableTagNames = [];
+        _selectedTagName = null;
+      });
+    }
+  }
+
+  Future<void> _saveContact() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final String? token = prefs.getString('jwt_token'); 
+
+        if (token == null || token.isEmpty) {
+          print("JWT token is missing");
+          return;
+        }
+        // Format the data according to the API schema
+        final Map<String, dynamic> requestBody = {
+          'contact': {
+            'first_name': _firstNameController.text,
+            'last_name': _lastNameController.text.isEmpty ? null : _lastNameController.text,
+            'email': _emailController.text.isEmpty ? null : _emailController.text,
+            'country_code': _countryCodeController.text,
+            'phone': _phoneController.text,
+            'note': _noteController.text.isEmpty ? null : _noteController.text,
+            'address': _addressController.text.isEmpty ? null : _addressController.text,
+            'city': _selectedCity,
+            'constituency': _selectedConstituency,
+          },
+          'priority': _selectedPriority,
+          'connection': _selectedConnection,
+          'tags': _tags.map((tag) => tag['id']).toList(),
+        };
+
+        // Make the API call
+        final response = await http.post(
+          Uri.parse('http://51.21.152.136:8000/contact/primary-contact/create/'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode(requestBody),
+        );
+
+        // Handle the response
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          // Success
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Contact saved successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          
+          // Navigate back or to a success page
+          Navigator.of(context).pop();
+        } else {
+          // Error
+          final responseData = jsonDecode(response.body);
+          setState(() {
+            _errorMessage = responseData['message'] ?? 'Failed to save contact. Please try again.';
+          });
+        }
+      } catch (e) {
+        setState(() {
+          _errorMessage = 'An error occurred: ${e.toString()}';
+        });
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _addTag() {
+    if (_selectedTagName != null && _selectedTagCategory != null) {
+      // Find the tag name from the available tags
+      final tagName = _availableTagNames.firstWhere(
+        (tag) => tag['id'] == _selectedTagName,
+        orElse: () => {'id': _selectedTagName, 'name': 'Unknown'},
+      );
+      
+      // Find the category from the categories list
+      final tagCategory = _tagCategories.firstWhere(
+        (category) => category['id'] == _selectedTagCategory,
+        orElse: () => {'id': _selectedTagCategory, 'name': 'Unknown'},
+      );
+      
+      // Check if this tag is already added
+      final isTagAlreadyAdded = _tags.any((tag) => tag['id'] == _selectedTagName);
+      
+      if (!isTagAlreadyAdded) {
+        setState(() {
+          _tags.add({
+            'id': _selectedTagName,
+            'name': tagName['name'],
+            'tag_category': tagCategory['name'],
+            'category_id': _selectedTagCategory,
+          });
+          
+          // Reset tag name selection but keep category selected
+          _selectedTagName = null;
+        });
+      } else {
+        // Show a message that the tag is already added
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Tag "${tagName['name']}" is already added'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
+  }
+  
+  void _removeTag(Map<String, dynamic> tag) {
+    setState(() {
+      _tags.remove(tag);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: primaryColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-        ),
-        title: const Text(
-          'New Primary Contact',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Name Fields
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _firstNameController,
-                        decoration: InputDecoration(
-                          labelText: 'First Name',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter first name';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _lastNameController,
-                        decoration: InputDecoration(
-                          labelText: 'Last Name',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Email Field
-                TextFormField(
-                  controller: _emailController,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    // Allow null or empty email
-                    if (value == null || value.isEmpty) {
-                      return null;
-                    }
-                    // If email is provided, validate its format
-                    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                    if (!emailRegex.hasMatch(value)) {
-                      return 'Please enter a valid email';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // Phone Number Fields
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 80,
-                      child: TextFormField(
-                        controller: _countryCodeController,
-                        decoration: InputDecoration(
-                          labelText: 'Code',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Code';
-                          }
-                          if(value.length > 5){
-                            return 'Country code must be 5 characters or less';
-                          }
-                          return null;
-                        },
-                        maxLength: 5,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _phoneController,
-                        decoration: InputDecoration(
-                          labelText: 'Phone Number',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        keyboardType: TextInputType.phone,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter phone number';
-                          }
-                          if(value.length > 11){
-                            return 'Phone number must be 11 characters or less';
-                          }
-                          return null;
-                        },
-                        maxLength: 11,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Address and City Fields
-                TextFormField(
-                  controller: _addressController,
-                  decoration: InputDecoration(
-                    labelText: 'Address',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _cityController,
-                        decoration: InputDecoration(
-                          labelText: 'City',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter city';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _constituencyController,
-                        decoration: InputDecoration(
-                          labelText: 'Constituency',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter constituency';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Connection Dropdown
-                DropdownButtonFormField<String?>(
-                  value: _selectedConnection,
-                  decoration: InputDecoration(
-                    labelText: 'Connection',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  items: _connections.map((String connection) {
-                    return DropdownMenuItem<String?>(
-                      value: connection,
-                      child: Text(connection),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      _selectedConnection = newValue;
-                    });
-                  },
-                  validator: (value) {
-                    if (value == null) {
-                      return 'Please select a connection';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // Priority Dropdown
-                DropdownButtonFormField<int>(
-                  value: _selectedPriority,
-                  decoration: InputDecoration(
-                    labelText: 'Priority',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  items: _priorityLevels.map((int priority) {
-                    return DropdownMenuItem<int>(
-                      value: priority,
-                      child: Text(priority.toString()),
-                    );
-                  }).toList(),
-                  onChanged: (int? newValue) {
-                    setState(() {
-                      _selectedPriority = newValue!;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // Notes Field
-                TextFormField(
-                  controller: _noteController,
-                  decoration: InputDecoration(
-                    labelText: 'Notes',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 16),
-
-                // Tags Section
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _tagNameController,
-                        decoration: InputDecoration(
-                          labelText: 'Tag Name',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _tagCategoryController,
-                        decoration: InputDecoration(
-                          labelText: 'Tag Category',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.add, color: primaryColor),
-                      onPressed: () {
-                        if (_tagNameController.text.isNotEmpty && 
-                            _tagCategoryController.text.isNotEmpty) {
-                          setState(() {
-                            _tags.add({
-                              'name': _tagNameController.text,
-                              'tag_category': _tagCategoryController.text
-                            });
-                            _tagNameController.clear();
-                            _tagCategoryController.clear();
-                          });
-                        }
-                      },
-                    ),
-                  ],
-                ),
-                
-                // Display Added Tags
-                if (_tags.isNotEmpty)
-                  Wrap(
-                    spacing: 8,
-                    children: _tags.map((tag) {
-                      return Chip(
-                        label: Text('${tag['name']} (${tag['tag_category']})'),
-                        onDeleted: () {
-                          setState(() {
-                            _tags.remove(tag);
-                          });
-                        },
-                      );
-                    }).toList(),
-                  ),
-                const SizedBox(height: 16),
-
-                // Save Button
-                ElevatedButton(
-                  onPressed: _saveContact,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    'Save Contact',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    return NewPrimaryContactUI(
+      formKey: _formKey,
+      primaryColor: primaryColor,
+      isInitialLoading: _isInitialLoading,
+      isLoading: _isLoading,
+      errorMessage: _errorMessage,
+      firstNameController: _firstNameController,
+      lastNameController: _lastNameController,
+      emailController: _emailController,
+      countryCodeController: _countryCodeController,
+      phoneController: _phoneController,
+      noteController: _noteController,
+      addressController: _addressController,
+      selectedConnection: _selectedConnection,
+      selectedPriority: _selectedPriority,
+      selectedCity: _selectedCity,
+      selectedConstituency: _selectedConstituency,
+      selectedTagCategory: _selectedTagCategory,
+      selectedTagName: _selectedTagName,
+      connections: _connections,
+      constituencies: _constituencies,
+      availableCities: _availableCities,
+      tagCategories: _tagCategories,
+      availableTagNames: _availableTagNames,
+      priorityLevels: _priorityLevels,
+      tags: _tags,
+      onConnectionChanged: (value) => setState(() => _selectedConnection = value),
+      onPriorityChanged: (value) => setState(() => _selectedPriority = value!),
+      onConstituencyChanged: (value) {
+        setState(() {
+          _selectedConstituency = value;
+          _updateAvailableCities();
+        });
+      },
+      onCityChanged: (value) => setState(() => _selectedCity = value),
+      onTagCategoryChanged: (value) {
+        setState(() {
+          _selectedTagCategory = value;
+          _updateAvailableTagNames();
+        });
+      },
+      onTagNameChanged: (value) => setState(() => _selectedTagName = value),
+      onAddTag: _addTag,
+      onRemoveTag: _removeTag,
+      onSave: _saveContact,
     );
-  }
-
-  void _saveContact() {
-    if (_formKey.currentState!.validate()) {
-      // Prepare the contact data
-      final contactData = {
-        'contact': {
-          'first_name': _firstNameController.text,
-          'last_name': _lastNameController.text,
-          'email': _emailController.text,
-          'country_code': _countryCodeController.text,
-          'phone': _phoneController.text,
-          'note': _noteController.text,
-          'address': _addressController.text,
-          'is_primary_contact': true,
-          'city': {
-            'name': _cityController.text,
-            'constituency': {
-              'name': _constituencyController.text
-            }
-          }
-        },
-        'priority': _selectedPriority,
-        'connection': _selectedConnection,
-        'tags': _tags.map((tag) => {
-          'name': tag['name'],
-          'tag_category': {
-            'name': tag['tag_category']
-          }
-        }).toList()
-      };
-
-      // TODO: Implement actual save logic (e.g., API call)
-      print(contactData);
-
-      // Show success dialog or navigate back
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Contact saved successfully!'),
-          backgroundColor: primaryColor,
-        ),
-      );
-    }
   }
 
   @override
@@ -453,10 +407,6 @@ class _NewPrimaryContactPageState extends State<NewPrimaryContactPage> {
     _phoneController.dispose();
     _noteController.dispose();
     _addressController.dispose();
-    _cityController.dispose();
-    _constituencyController.dispose();
-    _tagNameController.dispose();
-    _tagCategoryController.dispose();
     super.dispose();
   }
 }
