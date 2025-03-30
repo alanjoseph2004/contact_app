@@ -77,6 +77,7 @@ enum ContactType {
 // Service to handle contact operations
 class ContactService {
   static const String _storageKey = 'contacts';
+  static const String _primaryContactsKey = 'primary_contacts';
   
   // Load contacts from storage
   static Future<List<Contact>> getContacts() async {
@@ -90,6 +91,61 @@ class ContactService {
     } catch (e) {
       debugPrint('Error loading contacts: $e');
       return [];
+    }
+  }
+  
+  // Load primary contacts from storage
+  static Future<List<Contact>> getPrimaryContactsFromStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final contactsJson = prefs.getStringList(_primaryContactsKey) ?? [];
+      
+      return contactsJson
+          .map((json) => Contact.fromJson(jsonDecode(json)))
+          .toList();
+    } catch (e) {
+      debugPrint('Error loading primary contacts: $e');
+      return [];
+    }
+  }
+  
+  // Save primary contacts to storage
+  static Future<bool> savePrimaryContacts(List<Contact> contacts) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final contactsJson = contacts
+          .map((contact) => jsonEncode(contact.toJson()))
+          .toList();
+      
+      return await prefs.setStringList(_primaryContactsKey, contactsJson);
+    } catch (e) {
+      debugPrint('Error saving primary contacts: $e');
+      return false;
+    }
+  }
+  
+  // Save API primary contacts to local storage
+  static Future<bool> cacheApiPrimaryContacts(List<Contact> apiContacts) async {
+    try {
+      // First, get existing primary contacts to merge/update
+      final existingContacts = await getPrimaryContactsFromStorage();
+      
+      // Create a map of existing contacts by ID for easy lookup
+      final Map<String, Contact> contactMap = {
+        for (var contact in existingContacts) contact.id: contact
+      };
+      
+      // Update or add new contacts from API
+      for (var contact in apiContacts) {
+        contactMap[contact.id] = contact;
+      }
+      
+      // Convert back to list and save
+      final updatedContacts = contactMap.values.toList();
+      return await savePrimaryContacts(updatedContacts);
+    } catch (e) {
+      debugPrint('Error caching primary contacts: $e');
+      return false;
     }
   }
   
@@ -139,6 +195,14 @@ class ContactService {
     }
 
     contacts.add(contact);
+    
+    // If it's a primary contact, also add it to the primary contacts storage
+    if (contact.type == ContactType.primary) {
+      final primaryContacts = await getPrimaryContactsFromStorage();
+      primaryContacts.add(contact);
+      await savePrimaryContacts(primaryContacts);
+    }
+    
     return saveContacts(contacts);
   }
   
@@ -164,6 +228,21 @@ class ContactService {
       }
 
       contacts[index] = updatedContact;
+      
+      // Update the primary contacts storage if needed
+      if (updatedContact.type == ContactType.primary) {
+        final primaryContacts = await getPrimaryContactsFromStorage();
+        final primaryIndex = primaryContacts.indexWhere((c) => c.id == updatedContact.id);
+        
+        if (primaryIndex != -1) {
+          primaryContacts[primaryIndex] = updatedContact;
+        } else {
+          primaryContacts.add(updatedContact);
+        }
+        
+        await savePrimaryContacts(primaryContacts);
+      }
+      
       return saveContacts(contacts);
     }
     return false;
@@ -172,12 +251,27 @@ class ContactService {
   // Delete a contact
   static Future<bool> deleteContact(String id) async {
     final contacts = await getContacts();
+    final deletedContact = contacts.firstWhere((c) => c.id == id, orElse: () => null as Contact);
+    
     contacts.removeWhere((c) => c.id == id);
+    
+    // Also remove from primary contacts if needed
+    if (deletedContact != null && deletedContact.type == ContactType.primary) {
+      final primaryContacts = await getPrimaryContactsFromStorage();
+      primaryContacts.removeWhere((c) => c.id == id);
+      await savePrimaryContacts(primaryContacts);
+    }
+    
     return saveContacts(contacts);
   }
   
   // Get contacts by type
   static Future<List<Contact>> getContactsByType(ContactType type) async {
+    if (type == ContactType.primary) {
+      // Return cached primary contacts
+      return await getPrimaryContactsFromStorage();
+    }
+    
     final contacts = await getContacts();
     
     if (type == ContactType.both) {
@@ -195,9 +289,8 @@ class ContactService {
   
   // Get contacts with priority
   static Future<List<Contact>> getPriorityContacts() async {
-    final contacts = await getContacts();
+    final contacts = await getPrimaryContactsFromStorage();
     return contacts.where((c) => 
-      c.type == ContactType.primary && 
       c.priority != null && 
       c.priority! >= 1 && 
       c.priority! <= 5

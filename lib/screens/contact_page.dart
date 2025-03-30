@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'contact_logic.dart';
-import 'new_contact.dart';
 import 'edit_contact.dart';
-import 'new_primary_contact.dart';  // New import for primary contacts
+import 'new_primary_contact.dart';
 import 'new_all_contact.dart';
 
 class ContactsPage extends StatefulWidget {
@@ -17,7 +18,7 @@ class _ContactsPageState extends State<ContactsPage> {
   final Color primaryColor = const Color(0xFF283593);
   
   // Selected tab
-  ContactType _selectedTab = ContactType.all;
+  ContactType _selectedTab = ContactType.primary;
   
   // List to store contacts
   List<Contact> _contacts = [];
@@ -31,30 +32,97 @@ class _ContactsPageState extends State<ContactsPage> {
     _loadContacts();
   }
   
-  // Load contacts from service
+  // Load contacts based on selected tab
   Future<void> _loadContacts() async {
     setState(() {
       _isLoading = true;
     });
     
-    final contacts = await ContactService.getContacts();
+    if (_selectedTab == ContactType.primary) {
+      await _fetchPrimaryContactsFromAPI();
+    } else {
+      final contacts = await ContactService.getContacts();
+      setState(() {
+        _contacts = contacts;
+        _isLoading = false;
+      });
+    }
+  }
+  
+// Fetch primary contacts from API
+Future<void> _fetchPrimaryContactsFromAPI() async {
+  try {
+    final response = await http.get(
+      Uri.parse('http://51.21.152.136:8000/contact/all-primary-contacts/'),
+    );
     
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      final List<dynamic> results = data['results'];
+      
+      // Convert API response to Contact objects
+      final List<Contact> apiContacts = results.map((contactData) {
+        final contact = contactData['contact'];
+        return Contact(
+          id: contact['id'].toString(),
+          name: '${contact['first_name']} ${contact['last_name']}',
+          phoneNumber: '${contact['country_code']}-${contact['phone']}',
+          email: contact['email'],
+          type: ContactType.primary,
+          priority: contactData['priority'],
+          // Add other fields as needed
+        );
+      }).toList();
+      
+      // Cache the API contacts to local storage
+      await ContactService.cacheApiPrimaryContacts(apiContacts);
+      
+      setState(() {
+        _contacts = apiContacts;
+        _isLoading = false;
+      });
+    } else {
+      // Handle error - Try to load from cache if API fails
+      final cachedContacts = await ContactService.getPrimaryContactsFromStorage();
+      setState(() {
+        _contacts = cachedContacts;
+        _isLoading = false;
+      });
+      
+      if (cachedContacts.isEmpty) {
+        _showErrorSnackBar('Failed to load primary contacts');
+      } else {
+        _showErrorSnackBar('Using cached contacts - API request failed');
+      }
+    }
+  } catch (e) {
+    // Load from cache in case of error
+    final cachedContacts = await ContactService.getPrimaryContactsFromStorage();
     setState(() {
-      _contacts = contacts;
+      _contacts = cachedContacts;
       _isLoading = false;
     });
+    
+    if (cachedContacts.isEmpty) {
+      _showErrorSnackBar('Error: ${e.toString()}');
+    } else {
+      _showErrorSnackBar('Using cached contacts - ${e.toString()}');
+    }
+  }
+}
+  
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message))
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Filter contacts based on selected tab
-    List<Contact> filteredContacts = _contacts.where((contact) {
-      return contact.type == _selectedTab || contact.type == ContactType.both;
-    }).toList();
-
     // Group contacts by first letter
     Map<String, List<Contact>> groupedContacts = {};
-    for (var contact in filteredContacts) {
+    for (var contact in _contacts) {
+      if (contact.name.isEmpty) continue;
       final firstLetter = contact.name[0].toUpperCase();
       if (!groupedContacts.containsKey(firstLetter)) {
         groupedContacts[firstLetter] = [];
@@ -94,7 +162,7 @@ class _ContactsPageState extends State<ContactsPage> {
       ),
       body: Column(
         children: [
-          // Segmented control for Office/Personal
+          // Segmented control for Primary/All Contacts
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
@@ -108,6 +176,7 @@ class _ContactsPageState extends State<ContactsPage> {
                     onTap: () {
                       setState(() {
                         _selectedTab = ContactType.primary;
+                        _loadContacts(); // Reload contacts when tab changes
                       });
                     },
                     child: Container(
@@ -139,6 +208,7 @@ class _ContactsPageState extends State<ContactsPage> {
                     onTap: () {
                       setState(() {
                         _selectedTab = ContactType.all;
+                        _loadContacts(); // Reload contacts when tab changes
                       });
                     },
                     child: Container(
@@ -212,26 +282,26 @@ class _ContactsPageState extends State<ContactsPage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-      onPressed: () {
-        // Route to different new contact pages based on selected tab
-        Widget newContactPage;
-        if (_selectedTab == ContactType.primary) {
-          newContactPage = const NewPrimaryContactPage();
-        } else {
-          newContactPage = const NewAllContactPage();
-        }
+        onPressed: () {
+          // Route to different new contact pages based on selected tab
+          Widget newContactPage;
+          if (_selectedTab == ContactType.primary) {
+            newContactPage = const NewPrimaryContactPage();
+          } else {
+            newContactPage = const NewAllContactPage();
+          }
 
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => newContactPage),
-        ).then((_) {
-          // Reload contacts when returning from the new contact page
-          _loadContacts();
-        });
-      },
-      backgroundColor: primaryColor,
-      child: const Icon(Icons.person_add, color: Colors.white),
-    ),
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => newContactPage),
+          ).then((_) {
+            // Reload contacts when returning from the new contact page
+            _loadContacts();
+          });
+        },
+        backgroundColor: primaryColor,
+        child: const Icon(Icons.person_add, color: Colors.white),
+      ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         selectedItemColor: primaryColor,
@@ -291,10 +361,20 @@ class _ContactsPageState extends State<ContactsPage> {
         );
       },
       onDismissed: (direction) {
-        ContactService.deleteContact(contact.id);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("${contact.name} deleted"))
-        );
+        if (_selectedTab == ContactType.primary) {
+          // Handle API deletion for primary contacts if needed
+          // For now, just show a snackbar
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("${contact.name} deleted"))
+          );
+          // Refresh the list
+          _loadContacts();
+        } else {
+          ContactService.deleteContact(contact.id);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("${contact.name} deleted"))
+          );
+        }
       },
       child: ListTile(
         leading: CircleAvatar(
@@ -313,19 +393,39 @@ class _ContactsPageState extends State<ContactsPage> {
             fontSize: 16,
           ),
         ),
-        subtitle: Text(contact.phoneNumber),
+        subtitle: Row(
+          children: [
+            Text(contact.phoneNumber),
+            if (_selectedTab == ContactType.primary && contact.priority != null)
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: _getPriorityColor(contact.priority!),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    'Priority ${contact.priority}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              icon: Icon(
+              icon: const Icon(
                 Icons.message,
                 color: Colors.grey,
               ),
               onPressed: () {
                 // Implement message functionality
-                // For example, navigate to a message screen or open messaging app
-                // _openMessageScreen(contact);
               },
             ),
             IconButton(
@@ -335,7 +435,6 @@ class _ContactsPageState extends State<ContactsPage> {
               ),
               onPressed: () {
                 // Implement call functionality
-                // launchUrl(Uri.parse('tel:${contact.phoneNumber}'));
               },
             ),
           ],
@@ -345,6 +444,24 @@ class _ContactsPageState extends State<ContactsPage> {
         },
       ),
     );
+  }
+
+  // Get color based on priority
+  Color _getPriorityColor(int priority) {
+    switch (priority) {
+      case 1:
+        return Colors.red;
+      case 2:
+        return Colors.orange;
+      case 3:
+        return Colors.amber;
+      case 4:
+        return Colors.green;
+      case 5:
+        return Colors.blue;
+      default:
+        return Colors.grey;
+    }
   }
 
   void _showEditContactDialog(BuildContext context, Contact contact) async {
