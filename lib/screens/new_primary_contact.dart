@@ -328,6 +328,7 @@ class _NewPrimaryContactPageState extends State<NewPrimaryContactPage> {
           
           // Reset tag name selection but keep category selected
           _selectedTagName = null;
+          _selectedTagCategory = null;
         });
       } else {
         // Show a message that the tag is already added
