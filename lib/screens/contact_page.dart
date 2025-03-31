@@ -62,15 +62,44 @@ Future<void> _fetchPrimaryContactsFromAPI() async {
       
       // Convert API response to Contact objects
       final List<Contact> apiContacts = results.map((contactData) {
-        final contact = contactData['contact'];
+        final contactObj = contactData['contact'];
+        
+        // Handle city properly - it's an object not a string
+        String cityStr = '';
+        if (contactObj['city'] != null && contactObj['city'] is Map) {
+          cityStr = contactObj['city']['city'] ?? '';
+        }
+        
+        // Handle tags properly - they're objects with tag_name property
+        List<String> tagList = [];
+        if (contactData['tags'] != null && contactData['tags'] is List) {
+          tagList = (contactData['tags'] as List)
+              .map((tag) => tag['tag_name']?.toString() ?? '')
+              .toList();
+        }
+        
+        // Handle connection properly - it's an object with connection property
+        String connectionStr = '';
+        if (contactData['connection'] != null && contactData['connection'] is Map) {
+          connectionStr = contactData['connection']['connection'] ?? '';
+        }
+        
         return Contact(
-          id: contact['id'].toString(),
-          name: '${contact['first_name']} ${contact['last_name']}',
-          phoneNumber: '${contact['country_code']}-${contact['phone']}',
-          email: contact['email'],
+          id: contactObj['id']?.toString() ?? '',
+          firstName: contactObj['first_name'] ?? '',
+          lastName: contactObj['last_name'],
+          countryCode: contactObj['country_code'] ?? '',
+          phone: contactObj['phone'] ?? '',
+          email: contactObj['email'],
           type: ContactType.primary,
-          priority: contactData['priority'],
-          // Add other fields as needed
+          priority: contactData['priority'],  // Already an integer in the JSON
+          note: contactObj['note'],
+          address: contactObj['address'],
+          city: cityStr,  // Use the extracted city string
+          constituency: contactObj['constituency'] ?? '',
+          hasMessages: false,  // This field is not in your API response
+          connection: connectionStr,  // Use the extracted connection string
+          tags: tagList,  // Use the extracted tag list
         );
       }).toList();
       
@@ -96,6 +125,7 @@ Future<void> _fetchPrimaryContactsFromAPI() async {
       }
     }
   } catch (e) {
+    print('Error fetching contacts: $e'); // Add detailed logging
     // Load from cache in case of error
     final cachedContacts = await ContactService.getPrimaryContactsFromStorage();
     setState(() {

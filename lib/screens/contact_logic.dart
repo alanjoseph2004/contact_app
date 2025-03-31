@@ -4,25 +4,39 @@ import 'dart:convert';
 
 class Contact {
   final String id;
-  final String name;
-  final String phoneNumber;
+  final String firstName;
+  final String? lastName;
+  final String countryCode;
+  final String phone;
   final String? email;
+  final String? note;
+  final String? address;
+  final String? city;
+  final String? constituency;
   final String? avatarUrl;
   final bool hasMessages;
   final ContactType type;
-  final int? priority;       // Changed to int with range constraint for primary contacts
-  final String? referredBy;  // Only for all contacts
+  final int? priority;       // Range constraint for primary contacts
+  final String? connection;  // Replaces referredBy for all contacts
+  final List<String>? tags;
 
   Contact({
     required this.id,
-    required this.name,
-    required this.phoneNumber,
+    required this.firstName,
+    this.lastName,
+    required this.countryCode,
+    required this.phone,
     this.email,
+    this.note,
+    this.address,
+    this.city,
+    this.constituency,
     this.avatarUrl,
     this.hasMessages = false,
     required this.type,
     this.priority,
-    this.referredBy,
+    this.connection,
+    this.tags,
   }) {
     // Validate priority for primary contacts
     if (type == ContactType.primary && priority != null) {
@@ -31,24 +45,37 @@ class Contact {
       }
     }
 
-    // Validate referredBy for all contacts
-    if (type == ContactType.all && referredBy != null) {
-      // This will be checked in the service layer to ensure the referring contact is a primary contact
+    // Validate connection for all contacts
+    if (type == ContactType.all && connection != null) {
+      // This will be checked in the service layer to ensure the connecting contact is a primary contact
     }
   }
+
+  // Helper getter to return full name
+  String get name => lastName != null ? '$firstName $lastName' : firstName;
+
+  // Helper getter to return formatted phone number
+  String get phoneNumber => '$countryCode$phone';
 
   // Convert contact to JSON
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'name': name,
-      'phoneNumber': phoneNumber,
+      'firstName': firstName,
+      'lastName': lastName,
+      'countryCode': countryCode,
+      'phone': phone,
       'email': email,
+      'note': note,
+      'address': address,
+      'city': city,
+      'constituency': constituency,
       'avatarUrl': avatarUrl,
       'hasMessages': hasMessages,
       'type': type.index,
       'priority': type == ContactType.primary ? priority : null,
-      'referredBy': type == ContactType.all ? referredBy : null,
+      'connection': type == ContactType.all ? connection : null,
+      'tags': tags,
     };
   }
 
@@ -56,14 +83,21 @@ class Contact {
   factory Contact.fromJson(Map<String, dynamic> json) {
     return Contact(
       id: json['id'],
-      name: json['name'],
-      phoneNumber: json['phoneNumber'],
+      firstName: json['firstName'],
+      lastName: json['lastName'],
+      countryCode: json['countryCode'],
+      phone: json['phone'],
       email: json['email'],
+      note: json['note'],
+      address: json['address'],
+      city: json['city'],
+      constituency: json['constituency'],
       avatarUrl: json['avatarUrl'],
       hasMessages: json['hasMessages'] ?? false,
       type: ContactType.values[json['type']],
       priority: json['type'] == ContactType.primary.index ? json['priority'] : null,
-      referredBy: json['type'] == ContactType.all.index ? json['referredBy'] : null,
+      connection: json['type'] == ContactType.all.index ? json['connection'] : null,
+      tags: json['tags'] != null ? List<String>.from(json['tags']) : null,
     );
   }
 }
@@ -152,13 +186,13 @@ class ContactService {
   // Save contacts to storage with additional validation
   static Future<bool> saveContacts(List<Contact> contacts) async {
     try {
-      // Validate referredBy for all contacts
+      // Validate connection for all contacts
       for (var contact in contacts) {
-        if (contact.type == ContactType.all && contact.referredBy != null) {
-          // Check if the referring contact exists and is a primary contact
-          final referringContact = contacts.firstWhere(
-            (c) => c.id == contact.referredBy && c.type == ContactType.primary,
-            orElse: () => throw ArgumentError('Referred contact must be a primary contact'),
+        if (contact.type == ContactType.all && contact.connection != null) {
+          // Check if the connecting contact exists and is a primary contact
+          final connectingContact = contacts.firstWhere(
+            (c) => c.id == contact.connection && c.type == ContactType.primary,
+            orElse: () => throw ArgumentError('Connected contact must be a primary contact'),
           );
         }
       }
@@ -186,11 +220,11 @@ class ContactService {
       }
     }
 
-    // Validate referredBy for all contacts
-    if (contact.type == ContactType.all && contact.referredBy != null) {
-      final referringContact = contacts.firstWhere(
-        (c) => c.id == contact.referredBy && c.type == ContactType.primary,
-        orElse: () => throw ArgumentError('Referred contact must be a primary contact'),
+    // Validate connection for all contacts
+    if (contact.type == ContactType.all && contact.connection != null) {
+      final connectingContact = contacts.firstWhere(
+        (c) => c.id == contact.connection && c.type == ContactType.primary,
+        orElse: () => throw ArgumentError('Connected contact must be a primary contact'),
       );
     }
 
@@ -219,11 +253,11 @@ class ContactService {
         }
       }
 
-      // Validate referredBy for all contacts
-      if (updatedContact.type == ContactType.all && updatedContact.referredBy != null) {
-        final referringContact = contacts.firstWhere(
-          (c) => c.id == updatedContact.referredBy && c.type == ContactType.primary,
-          orElse: () => throw ArgumentError('Referred contact must be a primary contact'),
+      // Validate connection for all contacts
+      if (updatedContact.type == ContactType.all && updatedContact.connection != null) {
+        final connectingContact = contacts.firstWhere(
+          (c) => c.id == updatedContact.connection && c.type == ContactType.primary,
+          orElse: () => throw ArgumentError('Connected contact must be a primary contact'),
         );
       }
 
@@ -251,12 +285,12 @@ class ContactService {
   // Delete a contact
   static Future<bool> deleteContact(String id) async {
     final contacts = await getContacts();
-    final deletedContact = contacts.firstWhere((c) => c.id == id, orElse: () => null as Contact);
+    final deletedContact = contacts.firstWhere((c) => c.id == id, orElse: () => throw Exception('Contact not found'));
     
     contacts.removeWhere((c) => c.id == id);
     
     // Also remove from primary contacts if needed
-    if (deletedContact != null && deletedContact.type == ContactType.primary) {
+    if (deletedContact.type == ContactType.primary) {
       final primaryContacts = await getPrimaryContactsFromStorage();
       primaryContacts.removeWhere((c) => c.id == id);
       await savePrimaryContacts(primaryContacts);
@@ -294,6 +328,14 @@ class ContactService {
       c.priority != null && 
       c.priority! >= 1 && 
       c.priority! <= 5
+    ).toList();
+  }
+  
+  // Get contacts by tag
+  static Future<List<Contact>> getContactsByTag(String tag) async {
+    final contacts = await getContacts();
+    return contacts.where((c) => 
+      c.tags != null && c.tags!.contains(tag)
     ).toList();
   }
 }
