@@ -17,8 +17,10 @@ class Contact {
   final bool hasMessages;
   final ContactType type;
   final int? priority;       // Range constraint for primary contacts
-  final String? connection;  // Replaces referredBy for all contacts
+  final String? connection;  // For all contacts - ID of the referring primary contact
+  final Map<String, dynamic>? referredBy; // Additional referral details for all contacts
   final List<String>? tags;
+  final bool isPrimary;      // Flag to indicate if it's a primary contact
 
   Contact({
     required this.id,
@@ -36,18 +38,15 @@ class Contact {
     required this.type,
     this.priority,
     this.connection,
+    this.referredBy,
     this.tags,
+    this.isPrimary = false,
   }) {
     // Validate priority for primary contacts
     if (type == ContactType.primary && priority != null) {
       if (priority! < 1 || priority! > 5) {
         throw ArgumentError('Priority for primary contacts must be between 1 and 5');
       }
-    }
-
-    // Validate connection for all contacts
-    if (type == ContactType.all && connection != null) {
-      // This will be checked in the service layer to ensure the connecting contact is a primary contact
     }
   }
 
@@ -75,7 +74,9 @@ class Contact {
       'type': type.index,
       'priority': type == ContactType.primary ? priority : null,
       'connection': type == ContactType.all ? connection : null,
+      'referredBy': referredBy,
       'tags': tags,
+      'isPrimary': isPrimary,
     };
   }
 
@@ -97,7 +98,9 @@ class Contact {
       type: ContactType.values[json['type']],
       priority: json['type'] == ContactType.primary.index ? json['priority'] : null,
       connection: json['type'] == ContactType.all.index ? json['connection'] : null,
+      referredBy: json['referredBy'],
       tags: json['tags'] != null ? List<String>.from(json['tags']) : null,
+      isPrimary: json['isPrimary'] ?? false,
     );
   }
 }
@@ -112,6 +115,7 @@ enum ContactType {
 class ContactService {
   static const String _storageKey = 'contacts';
   static const String _primaryContactsKey = 'primary_contacts';
+  static const String _allContactsKey = 'all_contacts';
   
   // Load contacts from storage
   static Future<List<Contact>> getContacts() async {
@@ -143,6 +147,21 @@ class ContactService {
     }
   }
   
+  // Load all contacts from storage
+  static Future<List<Contact>> getAllContactsFromStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final contactsJson = prefs.getStringList(_allContactsKey) ?? [];
+      
+      return contactsJson
+          .map((json) => Contact.fromJson(jsonDecode(json)))
+          .toList();
+    } catch (e) {
+      debugPrint('Error loading all contacts: $e');
+      return [];
+    }
+  }
+  
   // Save primary contacts to storage
   static Future<bool> savePrimaryContacts(List<Contact> contacts) async {
     try {
@@ -154,6 +173,21 @@ class ContactService {
       return await prefs.setStringList(_primaryContactsKey, contactsJson);
     } catch (e) {
       debugPrint('Error saving primary contacts: $e');
+      return false;
+    }
+  }
+  
+  // Save all contacts to storage
+  static Future<bool> saveAllContacts(List<Contact> contacts) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final contactsJson = contacts
+          .map((contact) => jsonEncode(contact.toJson()))
+          .toList();
+      
+      return await prefs.setStringList(_allContactsKey, contactsJson);
+    } catch (e) {
+      debugPrint('Error saving all contacts: $e');
       return false;
     }
   }
@@ -183,20 +217,34 @@ class ContactService {
     }
   }
   
+  // Save API all contacts to local storage
+  static Future<bool> cacheApiAllContacts(List<Contact> apiContacts) async {
+    try {
+      // First, get existing all contacts to merge/update
+      final existingContacts = await getAllContactsFromStorage();
+      
+      // Create a map of existing contacts by ID for easy lookup
+      final Map<String, Contact> contactMap = {
+        for (var contact in existingContacts) contact.id: contact
+      };
+      
+      // Update or add new contacts from API
+      for (var contact in apiContacts) {
+        contactMap[contact.id] = contact;
+      }
+      
+      // Convert back to list and save
+      final updatedContacts = contactMap.values.toList();
+      return await saveAllContacts(updatedContacts);
+    } catch (e) {
+      debugPrint('Error caching all contacts: $e');
+      return false;
+    }
+  }
+  
   // Save contacts to storage with additional validation
   static Future<bool> saveContacts(List<Contact> contacts) async {
     try {
-      // Validate connection for all contacts
-      for (var contact in contacts) {
-        if (contact.type == ContactType.all && contact.connection != null) {
-          // Check if the connecting contact exists and is a primary contact
-          final connectingContact = contacts.firstWhere(
-            (c) => c.id == contact.connection && c.type == ContactType.primary,
-            orElse: () => throw ArgumentError('Connected contact must be a primary contact'),
-          );
-        }
-      }
-
       final prefs = await SharedPreferences.getInstance();
       final contactsJson = contacts
           .map((contact) => jsonEncode(contact.toJson()))
@@ -220,14 +268,6 @@ class ContactService {
       }
     }
 
-    // Validate connection for all contacts
-    if (contact.type == ContactType.all && contact.connection != null) {
-      final connectingContact = contacts.firstWhere(
-        (c) => c.id == contact.connection && c.type == ContactType.primary,
-        orElse: () => throw ArgumentError('Connected contact must be a primary contact'),
-      );
-    }
-
     contacts.add(contact);
     
     // If it's a primary contact, also add it to the primary contacts storage
@@ -235,6 +275,10 @@ class ContactService {
       final primaryContacts = await getPrimaryContactsFromStorage();
       primaryContacts.add(contact);
       await savePrimaryContacts(primaryContacts);
+    } else if (contact.type == ContactType.all) {
+      final allContacts = await getAllContactsFromStorage();
+      allContacts.add(contact);
+      await saveAllContacts(allContacts);
     }
     
     return saveContacts(contacts);
@@ -253,14 +297,6 @@ class ContactService {
         }
       }
 
-      // Validate connection for all contacts
-      if (updatedContact.type == ContactType.all && updatedContact.connection != null) {
-        final connectingContact = contacts.firstWhere(
-          (c) => c.id == updatedContact.connection && c.type == ContactType.primary,
-          orElse: () => throw ArgumentError('Connected contact must be a primary contact'),
-        );
-      }
-
       contacts[index] = updatedContact;
       
       // Update the primary contacts storage if needed
@@ -275,6 +311,17 @@ class ContactService {
         }
         
         await savePrimaryContacts(primaryContacts);
+      } else if (updatedContact.type == ContactType.all) {
+        final allContacts = await getAllContactsFromStorage();
+        final allIndex = allContacts.indexWhere((c) => c.id == updatedContact.id);
+        
+        if (allIndex != -1) {
+          allContacts[allIndex] = updatedContact;
+        } else {
+          allContacts.add(updatedContact);
+        }
+        
+        await saveAllContacts(allContacts);
       }
       
       return saveContacts(contacts);
@@ -289,11 +336,15 @@ class ContactService {
     
     contacts.removeWhere((c) => c.id == id);
     
-    // Also remove from primary contacts if needed
+    // Also remove from appropriate contacts storage
     if (deletedContact.type == ContactType.primary) {
       final primaryContacts = await getPrimaryContactsFromStorage();
       primaryContacts.removeWhere((c) => c.id == id);
       await savePrimaryContacts(primaryContacts);
+    } else if (deletedContact.type == ContactType.all) {
+      final allContacts = await getAllContactsFromStorage();
+      allContacts.removeWhere((c) => c.id == id);
+      await saveAllContacts(allContacts);
     }
     
     return saveContacts(contacts);
@@ -304,16 +355,15 @@ class ContactService {
     if (type == ContactType.primary) {
       // Return cached primary contacts
       return await getPrimaryContactsFromStorage();
+    } else if (type == ContactType.all) {
+      // Return cached all contacts
+      return await getAllContactsFromStorage();
     }
     
     final contacts = await getContacts();
     
     if (type == ContactType.both) {
-      return contacts.where((c) => 
-        c.type == ContactType.both || 
-        c.type == ContactType.primary || 
-        c.type == ContactType.all
-      ).toList();
+      return contacts;
     } else {
       return contacts.where((c) => 
         c.type == type || c.type == ContactType.both

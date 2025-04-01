@@ -40,6 +40,8 @@ class _ContactsPageState extends State<ContactsPage> {
     
     if (_selectedTab == ContactType.primary) {
       await _fetchPrimaryContactsFromAPI();
+    } else if (_selectedTab == ContactType.all) {
+      await _fetchAllContactsFromAPI();
     } else {
       final contacts = await ContactService.getContacts();
       setState(() {
@@ -49,69 +51,85 @@ class _ContactsPageState extends State<ContactsPage> {
     }
   }
   
-// Fetch primary contacts from API
-Future<void> _fetchPrimaryContactsFromAPI() async {
-  try {
-    final response = await http.get(
-      Uri.parse('http://51.21.152.136:8000/contact/all-primary-contacts/'),
-    );
-    
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-      final List<dynamic> results = data['results'];
+  // Fetch primary contacts from API
+  Future<void> _fetchPrimaryContactsFromAPI() async {
+    try {
+      final response = await http.get(
+        Uri.parse('http://51.21.152.136:8000/contact/all-primary-contacts/'),
+      );
       
-      // Convert API response to Contact objects
-      final List<Contact> apiContacts = results.map((contactData) {
-        final contactObj = contactData['contact'];
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final List<dynamic> results = data['results'];
         
-        // Handle city properly - it's an object not a string
-        String cityStr = '';
-        if (contactObj['city'] != null && contactObj['city'] is Map) {
-          cityStr = contactObj['city']['city'] ?? '';
+        // Convert API response to Contact objects
+        final List<Contact> apiContacts = results.map((contactData) {
+          final contactObj = contactData['contact'];
+          
+          // Handle city properly - it's an object not a string
+          String cityStr = '';
+          if (contactObj['city'] != null && contactObj['city'] is Map) {
+            cityStr = contactObj['city']['city'] ?? '';
+          }
+          
+          // Handle tags properly - they're objects with tag_name property
+          List<String> tagList = [];
+          if (contactData['tags'] != null && contactData['tags'] is List) {
+            tagList = (contactData['tags'] as List)
+                .map((tag) => tag['tag_name']?.toString() ?? '')
+                .toList();
+          }
+          
+          // Handle connection properly - it's an object with connection property
+          String connectionStr = '';
+          if (contactData['connection'] != null && contactData['connection'] is Map) {
+            connectionStr = contactData['connection']['connection'] ?? '';
+          }
+          
+          return Contact(
+            id: contactObj['id']?.toString() ?? '',
+            firstName: contactObj['first_name'] ?? '',
+            lastName: contactObj['last_name'],
+            countryCode: contactObj['country_code'] ?? '',
+            phone: contactObj['phone'] ?? '',
+            email: contactObj['email'],
+            type: ContactType.primary,
+            priority: contactData['priority'],  // Already an integer in the JSON
+            note: contactObj['note'],
+            address: contactObj['address'],
+            city: cityStr,  // Use the extracted city string
+            constituency: contactObj['constituency'] ?? '',
+            hasMessages: false,  // This field is not in your API response
+            connection: connectionStr,  // Use the extracted connection string
+            tags: tagList,  // Use the extracted tag list
+            isPrimary: true, // It's a primary contact
+          );
+        }).toList();
+        
+        // Cache the API contacts to local storage
+        await ContactService.cacheApiPrimaryContacts(apiContacts);
+        
+        setState(() {
+          _contacts = apiContacts;
+          _isLoading = false;
+        });
+      } else {
+        // Handle error - Try to load from cache if API fails
+        final cachedContacts = await ContactService.getPrimaryContactsFromStorage();
+        setState(() {
+          _contacts = cachedContacts;
+          _isLoading = false;
+        });
+        
+        if (cachedContacts.isEmpty) {
+          _showErrorSnackBar('Failed to load primary contacts');
+        } else {
+          _showErrorSnackBar('Using cached contacts - API request failed');
         }
-        
-        // Handle tags properly - they're objects with tag_name property
-        List<String> tagList = [];
-        if (contactData['tags'] != null && contactData['tags'] is List) {
-          tagList = (contactData['tags'] as List)
-              .map((tag) => tag['tag_name']?.toString() ?? '')
-              .toList();
-        }
-        
-        // Handle connection properly - it's an object with connection property
-        String connectionStr = '';
-        if (contactData['connection'] != null && contactData['connection'] is Map) {
-          connectionStr = contactData['connection']['connection'] ?? '';
-        }
-        
-        return Contact(
-          id: contactObj['id']?.toString() ?? '',
-          firstName: contactObj['first_name'] ?? '',
-          lastName: contactObj['last_name'],
-          countryCode: contactObj['country_code'] ?? '',
-          phone: contactObj['phone'] ?? '',
-          email: contactObj['email'],
-          type: ContactType.primary,
-          priority: contactData['priority'],  // Already an integer in the JSON
-          note: contactObj['note'],
-          address: contactObj['address'],
-          city: cityStr,  // Use the extracted city string
-          constituency: contactObj['constituency'] ?? '',
-          hasMessages: false,  // This field is not in your API response
-          connection: connectionStr,  // Use the extracted connection string
-          tags: tagList,  // Use the extracted tag list
-        );
-      }).toList();
-      
-      // Cache the API contacts to local storage
-      await ContactService.cacheApiPrimaryContacts(apiContacts);
-      
-      setState(() {
-        _contacts = apiContacts;
-        _isLoading = false;
-      });
-    } else {
-      // Handle error - Try to load from cache if API fails
+      }
+    } catch (e) {
+      print('Error fetching primary contacts: $e'); // Add detailed logging
+      // Load from cache in case of error
       final cachedContacts = await ContactService.getPrimaryContactsFromStorage();
       setState(() {
         _contacts = cachedContacts;
@@ -119,27 +137,98 @@ Future<void> _fetchPrimaryContactsFromAPI() async {
       });
       
       if (cachedContacts.isEmpty) {
-        _showErrorSnackBar('Failed to load primary contacts');
+        _showErrorSnackBar('Error: ${e.toString()}');
       } else {
-        _showErrorSnackBar('Using cached contacts - API request failed');
+        _showErrorSnackBar('Using cached contacts - ${e.toString()}');
       }
     }
-  } catch (e) {
-    print('Error fetching contacts: $e'); // Add detailed logging
-    // Load from cache in case of error
-    final cachedContacts = await ContactService.getPrimaryContactsFromStorage();
-    setState(() {
-      _contacts = cachedContacts;
-      _isLoading = false;
-    });
-    
-    if (cachedContacts.isEmpty) {
-      _showErrorSnackBar('Error: ${e.toString()}');
-    } else {
-      _showErrorSnackBar('Using cached contacts - ${e.toString()}');
+  }
+  
+  // Fetch all contacts from API
+  Future<void> _fetchAllContactsFromAPI() async {
+    try {
+      final response = await http.get(
+        Uri.parse('http://51.21.152.136:8000/contact/all-contacts/'),
+      );
+      
+      if (response.statusCode == 200) {
+        final List<dynamic> contactsData = json.decode(response.body);
+        
+        // Convert API response to Contact objects
+        final List<Contact> apiContacts = contactsData.map((contactData) {
+          // Handle city properly - it's an object not a string
+          String cityStr = '';
+          if (contactData['city'] != null && contactData['city'] is Map) {
+            cityStr = contactData['city']['city'] ?? '';
+          }
+          
+          // Handle referred_by properly - it's an object with referred details
+          Map<String, dynamic>? referredByMap;
+          if (contactData['referred_by'] != null && contactData['referred_by'] is Map) {
+            referredByMap = {
+              'referred_id': contactData['referred_by']['referred_id']?.toString() ?? '',
+              'referred_first_name': contactData['referred_by']['referred_first_name'] ?? '',
+              'referred_last_name': contactData['referred_by']['referred_last_name'] ?? '',
+              'referred_country_code': contactData['referred_by']['referred_country_code'] ?? '',
+              'referred_phone': contactData['referred_by']['referred_phone'] ?? '',
+            };
+          }
+          
+          return Contact(
+            id: contactData['id']?.toString() ?? '',
+            firstName: contactData['first_name'] ?? '',
+            lastName: contactData['last_name'],
+            countryCode: contactData['country_code'] ?? '',
+            phone: contactData['phone'] ?? '',
+            email: contactData['email'],
+            type: ContactType.all,
+            note: contactData['note'],
+            address: contactData['address'],
+            city: cityStr,
+            constituency: contactData['constituency'] ?? '',
+            hasMessages: false, // This field is not in your API response
+            referredBy: referredByMap,
+            isPrimary: contactData['is_primary_contact'] ?? false,
+          );
+        }).toList();
+        
+        // Cache the API contacts to local storage
+        await ContactService.cacheApiAllContacts(apiContacts);
+        
+        setState(() {
+          _contacts = apiContacts;
+          _isLoading = false;
+        });
+      } else {
+        // Handle error - Try to load from cache if API fails
+        final cachedContacts = await ContactService.getAllContactsFromStorage();
+        setState(() {
+          _contacts = cachedContacts;
+          _isLoading = false;
+        });
+        
+        if (cachedContacts.isEmpty) {
+          _showErrorSnackBar('Failed to load all contacts');
+        } else {
+          _showErrorSnackBar('Using cached contacts - API request failed');
+        }
+      }
+    } catch (e) {
+      print('Error fetching all contacts: $e'); // Add detailed logging
+      // Load from cache in case of error
+      final cachedContacts = await ContactService.getAllContactsFromStorage();
+      setState(() {
+        _contacts = cachedContacts;
+        _isLoading = false;
+      });
+      
+      if (cachedContacts.isEmpty) {
+        _showErrorSnackBar('Error: ${e.toString()}');
+      } else {
+        _showErrorSnackBar('Using cached contacts - ${e.toString()}');
+      }
     }
   }
-}
   
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -391,20 +480,13 @@ Future<void> _fetchPrimaryContactsFromAPI() async {
         );
       },
       onDismissed: (direction) {
-        if (_selectedTab == ContactType.primary) {
-          // Handle API deletion for primary contacts if needed
-          // For now, just show a snackbar
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("${contact.name} deleted"))
-          );
-          // Refresh the list
-          _loadContacts();
-        } else {
-          ContactService.deleteContact(contact.id);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("${contact.name} deleted"))
-          );
-        }
+        // Handle contact deletion based on type
+        ContactService.deleteContact(contact.id);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("${contact.name} deleted"))
+        );
+        // Refresh the list
+        _loadContacts();
       },
       child: ListTile(
         leading: CircleAvatar(
@@ -423,24 +505,41 @@ Future<void> _fetchPrimaryContactsFromAPI() async {
             fontSize: 16,
           ),
         ),
-        subtitle: Row(
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(contact.phoneNumber),
-            if (_selectedTab == ContactType.primary && contact.priority != null)
-              Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: _getPriorityColor(contact.priority!),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    'Priority ${contact.priority}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
+            Row(
+              children: [
+                Text(contact.phoneNumber),
+                if (_selectedTab == ContactType.primary && contact.priority != null)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: _getPriorityColor(contact.priority!),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        'Priority ${contact.priority}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
+                  ),
+              ],
+            ),
+            if (_selectedTab == ContactType.all && contact.referredBy != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Referred by: ${contact.referredBy!['referred_first_name']} ${contact.referredBy!['referred_last_name'] ?? ''}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                    fontStyle: FontStyle.italic,
                   ),
                 ),
               ),
