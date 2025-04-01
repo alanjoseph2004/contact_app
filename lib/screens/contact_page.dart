@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'contact_logic.dart';
-import 'edit_contact.dart';
 import 'new_primary_contact.dart';
 import 'new_all_contact.dart';
+import 'detailed_contact.dart';
+
 
 class ContactsPage extends StatefulWidget {
   const ContactsPage({super.key});
@@ -449,47 +450,49 @@ class _ContactsPageState extends State<ContactsPage> {
   }
 
   Widget _buildContactTile(Contact contact) {
-    return Dismissible(
-      key: Key(contact.id),
-      background: Container(
-        color: Colors.red,
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        child: const Icon(Icons.delete, color: Colors.white),
-      ),
-      direction: DismissDirection.endToStart,
-      confirmDismiss: (direction) async {
-        return await showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text("Delete Contact"),
-              content: Text("Are you sure you want to delete ${contact.name}?"),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text("CANCEL"),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text("DELETE"),
-                ),
-              ],
-            );
-          },
-        );
-      },
-      onDismissed: (direction) {
-        // Handle contact deletion based on type
-        ContactService.deleteContact(contact.id);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("${contact.name} deleted"))
-        );
-        // Refresh the list
-        _loadContacts();
-      },
-      child: ListTile(
-        leading: CircleAvatar(
+  return Dismissible(
+    key: Key(contact.id),
+    background: Container(
+      color: Colors.red,
+      alignment: Alignment.centerRight,
+      padding: const EdgeInsets.only(right: 20),
+      child: const Icon(Icons.delete, color: Colors.white),
+    ),
+    direction: DismissDirection.endToStart,
+    confirmDismiss: (direction) async {
+      return await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text("Delete Contact"),
+            content: Text("Are you sure you want to delete ${contact.name}?"),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text("CANCEL"),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text("DELETE"),
+              ),
+            ],
+          );
+        },
+      );
+    },
+    onDismissed: (direction) {
+      // Handle contact deletion based on type
+      ContactService.deleteContact(contact.id);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("${contact.name} deleted"))
+      );
+      // Refresh the list
+      _loadContacts();
+    },
+    child: ListTile(
+      leading: Hero(
+        tag: 'contact_avatar_${contact.id}',
+        child: CircleAvatar(
           backgroundColor: primaryColor.withOpacity(0.2),
           backgroundImage: contact.avatarUrl != null ? NetworkImage(contact.avatarUrl!) : null,
           radius: 24,
@@ -498,82 +501,92 @@ class _ContactsPageState extends State<ContactsPage> {
             style: TextStyle(color: primaryColor),
           ) : null,
         ),
-        title: Text(
-          contact.name,
-          style: const TextStyle(
-            fontWeight: FontWeight.w500,
-            fontSize: 16,
-          ),
+      ),
+      title: Text(
+        contact.name,
+        style: const TextStyle(
+          fontWeight: FontWeight.w500,
+          fontSize: 16,
         ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text(contact.phoneNumber),
-                if (_selectedTab == ContactType.primary && contact.priority != null)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: _getPriorityColor(contact.priority!),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        'Priority ${contact.priority}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                        ),
+      ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(contact.phoneNumber),
+              if (_selectedTab == ContactType.primary && contact.priority != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: _getPriorityColor(contact.priority!),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      'Priority ${contact.priority}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
                       ),
                     ),
                   ),
-              ],
-            ),
-            if (_selectedTab == ContactType.all && contact.referredBy != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  'Referred by: ${contact.referredBy!['referred_first_name']} ${contact.referredBy!['referred_last_name'] ?? ''}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                    fontStyle: FontStyle.italic,
-                  ),
+                ),
+            ],
+          ),
+          if (_selectedTab == ContactType.all && contact.referredBy != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'Referred by: ${contact.referredBy!['referred_first_name']} ${contact.referredBy!['referred_last_name'] ?? ''}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontStyle: FontStyle.italic,
                 ),
               ),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: const Icon(
-                Icons.message,
-                color: Colors.grey,
-              ),
-              onPressed: () {
-                // Implement message functionality
-              },
             ),
-            IconButton(
-              icon: const Icon(
-                Icons.phone,
-                color: Colors.grey,
-              ),
-              onPressed: () {
-                // Implement call functionality
-              },
-            ),
-          ],
-        ),
-        onTap: () {
-          _showEditContactDialog(context, contact);
-        },
+        ],
       ),
-    );
-  }
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(
+              Icons.message,
+              color: Colors.grey,
+            ),
+            onPressed: () {
+              // Implement message functionality
+            },
+          ),
+          IconButton(
+            icon: const Icon(
+              Icons.phone,
+              color: Colors.grey,
+            ),
+            onPressed: () {
+              // Implement call functionality
+            },
+          ),
+        ],
+      ),
+      onTap: () {
+        // Navigate to the detailed contact page instead of showing the edit dialog
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DetailedContactPage(contact: contact),
+          ),
+        ).then((_) {
+          // Reload contacts when returning from the detailed contact page
+          _loadContacts();
+        });
+      },
+    ),
+  );
+}
 
   // Get color based on priority
   Color _getPriorityColor(int priority) {
@@ -590,21 +603,6 @@ class _ContactsPageState extends State<ContactsPage> {
         return Colors.blue;
       default:
         return Colors.grey;
-    }
-  }
-
-  void _showEditContactDialog(BuildContext context, Contact contact) async {
-    final result = await showDialog(
-      context: context,
-      builder: (context) => EditContactDialog(
-        contact: contact, 
-        primaryColor: primaryColor
-      ),
-    );
-
-    // If a contact was updated, reload the contacts
-    if (result != null) {
-      await _loadContacts();
     }
   }
 }

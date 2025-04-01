@@ -12,7 +12,7 @@ class EditContactDialog extends StatefulWidget {
   const EditContactDialog({
     super.key, 
     required this.contact, 
-    required this.primaryColor
+    required this.primaryColor, required bool isFullScreen
   });
 
   @override
