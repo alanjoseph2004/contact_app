@@ -1,59 +1,56 @@
-import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'contact_logic.dart';
-import 'new_primary_contact.dart';
-import 'new_all_contact.dart';
-import 'detailed_contact.dart';
 
-
-class ContactsPage extends StatefulWidget {
-  const ContactsPage({super.key});
-
-  @override
-  State<ContactsPage> createState() => _ContactsPageState();
-}
-
-class _ContactsPageState extends State<ContactsPage> {
+class ContactsPageLogic {
   // Primary theme color
   final Color primaryColor = const Color(0xFF283593);
   
-  // Selected tab
-  ContactType _selectedTab = ContactType.primary;
-  
   // List to store contacts
-  List<Contact> _contacts = [];
+  List<Contact> contacts = [];
   
   // Loading state
-  bool _isLoading = true;
+  bool isLoading = true;
+  
+  // Current selected tab
+  ContactType selectedTab = ContactType.primary;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadContacts();
+  // Function to update loading state with a callback to update UI
+  void setLoading(bool loading, Function(bool) updateState) {
+    isLoading = loading;
+    updateState(loading);
+  }
+  
+  // Set selected tab with a callback to update UI
+  void setSelectedTab(ContactType type, Function(ContactType) updateState) {
+    selectedTab = type;
+    updateState(type);
+  }
+  
+  // Set contact list with a callback to update UI
+  void setContacts(List<Contact> newContacts, Function(List<Contact>) updateState) {
+    contacts = newContacts;
+    updateState(newContacts);
   }
   
   // Load contacts based on selected tab
-  Future<void> _loadContacts() async {
-    setState(() {
-      _isLoading = true;
-    });
+  Future<void> loadContacts(BuildContext context, Function(bool) updateLoadingState, Function(List<Contact>) updateContactsState) async {
+    setLoading(true, updateLoadingState);
     
-    if (_selectedTab == ContactType.primary) {
-      await _fetchPrimaryContactsFromAPI();
-    } else if (_selectedTab == ContactType.all) {
-      await _fetchAllContactsFromAPI();
+    if (selectedTab == ContactType.primary) {
+      await fetchPrimaryContactsFromAPI(context, updateLoadingState, updateContactsState);
+    } else if (selectedTab == ContactType.all) {
+      await fetchAllContactsFromAPI(context, updateLoadingState, updateContactsState);
     } else {
-      final contacts = await ContactService.getContacts();
-      setState(() {
-        _contacts = contacts;
-        _isLoading = false;
-      });
+      final contactsList = await ContactService.getContacts();
+      setContacts(contactsList, updateContactsState);
+      setLoading(false, updateLoadingState);
     }
   }
   
   // Fetch primary contacts from API
-  Future<void> _fetchPrimaryContactsFromAPI() async {
+  Future<void> fetchPrimaryContactsFromAPI(BuildContext context, Function(bool) updateLoadingState, Function(List<Contact>) updateContactsState) async {
     try {
       final response = await http.get(
         Uri.parse('http://51.21.152.136:8000/contact/all-primary-contacts/'),
@@ -110,43 +107,37 @@ class _ContactsPageState extends State<ContactsPage> {
         // Cache the API contacts to local storage
         await ContactService.cacheApiPrimaryContacts(apiContacts);
         
-        setState(() {
-          _contacts = apiContacts;
-          _isLoading = false;
-        });
+        setContacts(apiContacts, updateContactsState);
+        setLoading(false, updateLoadingState);
       } else {
         // Handle error - Try to load from cache if API fails
         final cachedContacts = await ContactService.getPrimaryContactsFromStorage();
-        setState(() {
-          _contacts = cachedContacts;
-          _isLoading = false;
-        });
+        setContacts(cachedContacts, updateContactsState);
+        setLoading(false, updateLoadingState);
         
         if (cachedContacts.isEmpty) {
-          _showErrorSnackBar('Failed to load primary contacts');
+          showErrorSnackBar(context, 'Failed to load primary contacts');
         } else {
-          _showErrorSnackBar('Using cached contacts - API request failed');
+          showErrorSnackBar(context, 'Using cached contacts - API request failed');
         }
       }
     } catch (e) {
       print('Error fetching primary contacts: $e'); // Add detailed logging
       // Load from cache in case of error
       final cachedContacts = await ContactService.getPrimaryContactsFromStorage();
-      setState(() {
-        _contacts = cachedContacts;
-        _isLoading = false;
-      });
+      setContacts(cachedContacts, updateContactsState);
+      setLoading(false, updateLoadingState);
       
       if (cachedContacts.isEmpty) {
-        _showErrorSnackBar('Error: ${e.toString()}');
+        showErrorSnackBar(context, 'Error: ${e.toString()}');
       } else {
-        _showErrorSnackBar('Using cached contacts - ${e.toString()}');
+        showErrorSnackBar(context, 'Using cached contacts - ${e.toString()}');
       }
     }
   }
   
   // Fetch all contacts from API
-  Future<void> _fetchAllContactsFromAPI() async {
+  Future<void> fetchAllContactsFromAPI(BuildContext context, Function(bool) updateLoadingState, Function(List<Contact>) updateContactsState) async {
     try {
       final response = await http.get(
         Uri.parse('http://51.21.152.136:8000/contact/all-contacts/'),
@@ -196,400 +187,43 @@ class _ContactsPageState extends State<ContactsPage> {
         // Cache the API contacts to local storage
         await ContactService.cacheApiAllContacts(apiContacts);
         
-        setState(() {
-          _contacts = apiContacts;
-          _isLoading = false;
-        });
+        setContacts(apiContacts, updateContactsState);
+        setLoading(false, updateLoadingState);
       } else {
         // Handle error - Try to load from cache if API fails
         final cachedContacts = await ContactService.getAllContactsFromStorage();
-        setState(() {
-          _contacts = cachedContacts;
-          _isLoading = false;
-        });
+        setContacts(cachedContacts, updateContactsState);
+        setLoading(false, updateLoadingState);
         
         if (cachedContacts.isEmpty) {
-          _showErrorSnackBar('Failed to load all contacts');
+          showErrorSnackBar(context, 'Failed to load all contacts');
         } else {
-          _showErrorSnackBar('Using cached contacts - API request failed');
+          showErrorSnackBar(context, 'Using cached contacts - API request failed');
         }
       }
     } catch (e) {
       print('Error fetching all contacts: $e'); // Add detailed logging
       // Load from cache in case of error
       final cachedContacts = await ContactService.getAllContactsFromStorage();
-      setState(() {
-        _contacts = cachedContacts;
-        _isLoading = false;
-      });
+      setContacts(cachedContacts, updateContactsState);
+      setLoading(false, updateLoadingState);
       
       if (cachedContacts.isEmpty) {
-        _showErrorSnackBar('Error: ${e.toString()}');
+        showErrorSnackBar(context, 'Error: ${e.toString()}');
       } else {
-        _showErrorSnackBar('Using cached contacts - ${e.toString()}');
+        showErrorSnackBar(context, 'Using cached contacts - ${e.toString()}');
       }
     }
   }
   
-  void _showErrorSnackBar(String message) {
+  void showErrorSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message))
     );
   }
-
-  @override
-  Widget build(BuildContext context) {
-    // Group contacts by first letter
-    Map<String, List<Contact>> groupedContacts = {};
-    for (var contact in _contacts) {
-      if (contact.name.isEmpty) continue;
-      final firstLetter = contact.name[0].toUpperCase();
-      if (!groupedContacts.containsKey(firstLetter)) {
-        groupedContacts[firstLetter] = [];
-      }
-      groupedContacts[firstLetter]?.add(contact);
-    }
-
-    // Sort the keys alphabetically
-    final sortedKeys = groupedContacts.keys.toList()..sort();
-
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: primaryColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () {},
-        ),
-        title: const Text(
-          'Contacts',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: Colors.white),
-            onPressed: () {
-              // Navigate to search page
-              // Navigator.push(context, MaterialPageRoute(builder: (context) => ContactSearchPage()));
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Segmented control for Primary/All Contacts
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedTab = ContactType.primary;
-                        _loadContacts(); // Reload contacts when tab changes
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        border: const Border(
-                          right: BorderSide(color: Colors.grey, width: 0.5),
-                        ),
-                        color: _selectedTab == ContactType.primary 
-                            ? primaryColor.withOpacity(0.1) 
-                            : Colors.transparent,
-                      ),
-                      child: Center(
-                        child: Text(
-                          'Primary',
-                          style: TextStyle(
-                            color: _selectedTab == ContactType.primary 
-                                ? primaryColor 
-                                : Colors.grey,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedTab = ContactType.all;
-                        _loadContacts(); // Reload contacts when tab changes
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      color: _selectedTab == ContactType.all 
-                          ? primaryColor.withOpacity(0.1) 
-                          : Colors.transparent,
-                      child: Center(
-                        child: Text(
-                          'All Contacts',
-                          style: TextStyle(
-                            color: _selectedTab == ContactType.all
-                                ? primaryColor 
-                                : Colors.grey,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          // Contact list
-          Expanded(
-            child: _isLoading 
-                ? Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
-                    ),
-                  )
-                : sortedKeys.isEmpty 
-                    ? Center(
-                        child: Text(
-                          'No contacts in this category',
-                          style: TextStyle(color: primaryColor.withOpacity(0.7)),
-                        ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _loadContacts,
-                        color: primaryColor,
-                        child: ListView.builder(
-                          itemCount: sortedKeys.length,
-                          itemBuilder: (context, index) {
-                            final letter = sortedKeys[index];
-                            final contactsInGroup = groupedContacts[letter] ?? [];
-                            
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 16, top: 16, bottom: 8),
-                                  child: Text(
-                                    letter,
-                                    style: TextStyle(
-                                      color: primaryColor,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                                ...contactsInGroup.map((contact) => _buildContactTile(contact)),
-                              ],
-                            );
-                          },
-                        ),
-                      ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Route to different new contact pages based on selected tab
-          Widget newContactPage;
-          if (_selectedTab == ContactType.primary) {
-            newContactPage = const NewPrimaryContactPage();
-          } else {
-            newContactPage = const NewAllContactPage();
-          }
-
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => newContactPage),
-          ).then((_) {
-            // Reload contacts when returning from the new contact page
-            _loadContacts();
-          });
-        },
-        backgroundColor: primaryColor,
-        child: const Icon(Icons.person_add, color: Colors.white),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: primaryColor,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.phone),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: '',
-          ),
-        ],
-        currentIndex: 2,
-      ),
-    );
-  }
-
-  Widget _buildContactTile(Contact contact) {
-  return Dismissible(
-    key: Key(contact.id),
-    background: Container(
-      color: Colors.red,
-      alignment: Alignment.centerRight,
-      padding: const EdgeInsets.only(right: 20),
-      child: const Icon(Icons.delete, color: Colors.white),
-    ),
-    direction: DismissDirection.endToStart,
-    confirmDismiss: (direction) async {
-      return await showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text("Delete Contact"),
-            content: Text("Are you sure you want to delete ${contact.name}?"),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text("CANCEL"),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text("DELETE"),
-              ),
-            ],
-          );
-        },
-      );
-    },
-    onDismissed: (direction) {
-      // Handle contact deletion based on type
-      ContactService.deleteContact(contact.id);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("${contact.name} deleted"))
-      );
-      // Refresh the list
-      _loadContacts();
-    },
-    child: ListTile(
-      leading: Hero(
-        tag: 'contact_avatar_${contact.id}',
-        child: CircleAvatar(
-          backgroundColor: primaryColor.withOpacity(0.2),
-          backgroundImage: contact.avatarUrl != null ? NetworkImage(contact.avatarUrl!) : null,
-          radius: 24,
-          child: contact.avatarUrl == null ? Text(
-            contact.name.isNotEmpty ? contact.name[0].toUpperCase() : "?",
-            style: TextStyle(color: primaryColor),
-          ) : null,
-        ),
-      ),
-      title: Text(
-        contact.name,
-        style: const TextStyle(
-          fontWeight: FontWeight.w500,
-          fontSize: 16,
-        ),
-      ),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(contact.phoneNumber),
-              if (_selectedTab == ContactType.primary && contact.priority != null)
-                Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: _getPriorityColor(contact.priority!),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      'Priority ${contact.priority}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          if (_selectedTab == ContactType.all && contact.referredBy != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                'Referred by: ${contact.referredBy!['referred_first_name']} ${contact.referredBy!['referred_last_name'] ?? ''}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ),
-        ],
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            icon: const Icon(
-              Icons.message,
-              color: Colors.grey,
-            ),
-            onPressed: () {
-              // Implement message functionality
-            },
-          ),
-          IconButton(
-            icon: const Icon(
-              Icons.phone,
-              color: Colors.grey,
-            ),
-            onPressed: () {
-              // Implement call functionality
-            },
-          ),
-        ],
-      ),
-      onTap: () {
-        // Navigate to the detailed contact page instead of showing the edit dialog
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => DetailedContactPage(contact: contact),
-          ),
-        ).then((_) {
-          // Reload contacts when returning from the detailed contact page
-          _loadContacts();
-        });
-      },
-    ),
-  );
-}
-
+  
   // Get color based on priority
-  Color _getPriorityColor(int priority) {
+  Color getPriorityColor(int priority) {
     switch (priority) {
       case 1:
         return Colors.red;
@@ -604,5 +238,25 @@ class _ContactsPageState extends State<ContactsPage> {
       default:
         return Colors.grey;
     }
+  }
+  
+  // Group contacts by first letter
+  Map<String, List<Contact>> getGroupedContacts() {
+    Map<String, List<Contact>> groupedContacts = {};
+    for (var contact in contacts) {
+      if (contact.name.isEmpty) continue;
+      final firstLetter = contact.name[0].toUpperCase();
+      if (!groupedContacts.containsKey(firstLetter)) {
+        groupedContacts[firstLetter] = [];
+      }
+      groupedContacts[firstLetter]?.add(contact);
+    }
+    return groupedContacts;
+  }
+  
+  // Get sorted keys for grouped contacts
+  List<String> getSortedKeys(Map<String, List<Contact>> groupedContacts) {
+    final sortedKeys = groupedContacts.keys.toList()..sort();
+    return sortedKeys;
   }
 }
