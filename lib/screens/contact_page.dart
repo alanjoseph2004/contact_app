@@ -138,83 +138,86 @@ class ContactsPageLogic {
   
   // Fetch all contacts from API
   Future<void> fetchAllContactsFromAPI(BuildContext context, Function(bool) updateLoadingState, Function(List<Contact>) updateContactsState) async {
-    try {
-      final response = await http.get(
-        Uri.parse('http://51.21.152.136:8000/contact/all-contacts/'),
-      );
+  try {
+    final response = await http.get(
+      Uri.parse('http://51.21.152.136:8000/contact/all-contacts/'),
+    );
+    
+    if (response.statusCode == 200) {
+      // Parse the response as a Map first
+      final Map<String, dynamic> responseData = json.decode(response.body);
       
-      if (response.statusCode == 200) {
-        final List<dynamic> contactsData = json.decode(response.body);
-        
-        // Convert API response to Contact objects
-        final List<Contact> apiContacts = contactsData.map((contactData) {
-          // Handle city properly - it's an object not a string
-          String cityStr = '';
-          if (contactData['city'] != null && contactData['city'] is Map) {
-            cityStr = contactData['city']['city'] ?? '';
-          }
-          
-          // Handle referred_by properly - it's an object with referred details
-          Map<String, dynamic>? referredByMap;
-          if (contactData['referred_by'] != null && contactData['referred_by'] is Map) {
-            referredByMap = {
-              'referred_id': contactData['referred_by']['referred_id']?.toString() ?? '',
-              'referred_first_name': contactData['referred_by']['referred_first_name'] ?? '',
-              'referred_last_name': contactData['referred_by']['referred_last_name'] ?? '',
-              'referred_country_code': contactData['referred_by']['referred_country_code'] ?? '',
-              'referred_phone': contactData['referred_by']['referred_phone'] ?? '',
-            };
-          }
-          
-          return Contact(
-            id: contactData['id']?.toString() ?? '',
-            firstName: contactData['first_name'] ?? '',
-            lastName: contactData['last_name'],
-            countryCode: contactData['country_code'] ?? '',
-            phone: contactData['phone'] ?? '',
-            email: contactData['email'],
-            type: ContactType.all,
-            note: contactData['note'],
-            address: contactData['address'],
-            city: cityStr,
-            constituency: contactData['constituency'] ?? '',
-            hasMessages: false, // This field is not in your API response
-            referredBy: referredByMap,
-            isPrimary: contactData['is_primary_contact'] ?? false,
-          );
-        }).toList();
-        
-        // Cache the API contacts to local storage
-        await ContactService.cacheApiAllContacts(apiContacts);
-        
-        setContacts(apiContacts, updateContactsState);
-        setLoading(false, updateLoadingState);
-      } else {
-        // Handle error - Try to load from cache if API fails
-        final cachedContacts = await ContactService.getAllContactsFromStorage();
-        setContacts(cachedContacts, updateContactsState);
-        setLoading(false, updateLoadingState);
-        
-        if (cachedContacts.isEmpty) {
-          showErrorSnackBar(context, 'Failed to load all contacts');
-        } else {
-          showErrorSnackBar(context, 'Using cached contacts - API request failed');
+      // Extract the contacts array from the 'results' field
+      final List<dynamic> contactsData = responseData['results'] ?? [];
+      
+      // Convert API response to Contact objects
+      final List<Contact> apiContacts = contactsData.map<Contact>((contactData) {
+        // Handle city properly - it's an object not a string
+        String cityStr = '';
+        if (contactData['city'] != null && contactData['city'] is Map) {
+          cityStr = contactData['city']['city'] ?? '';
         }
-      }
-    } catch (e) {
-      print('Error fetching all contacts: $e'); // Add detailed logging
-      // Load from cache in case of error
+        
+        Map<String, dynamic>? referredByMap;
+        if (contactData['referred_by'] != null && contactData['referred_by'] is Map) {
+          referredByMap = {
+            'referred_id': contactData['referred_by']['referred_id']?.toString() ?? '',
+            'referred_first_name': contactData['referred_by']['referred_first_name'] ?? '',
+            'referred_last_name': contactData['referred_by']['referred_last_name'] ?? '',
+            'referred_country_code': contactData['referred_by']['referred_country_code'] ?? '',
+            'referred_phone': contactData['referred_by']['referred_phone'] ?? '',
+          };
+        }
+        
+        return Contact(
+          id: contactData['id']?.toString() ?? '',
+          firstName: contactData['first_name'] ?? '',
+          lastName: contactData['last_name'],
+          countryCode: contactData['country_code'] ?? '',
+          phone: contactData['phone'] ?? '',
+          email: contactData['email'],
+          type: ContactType.all,
+          note: contactData['note'],
+          address: contactData['address'],
+          city: cityStr,
+          constituency: contactData['constituency'] ?? '',
+          hasMessages: false, // This field is not in your API response
+          referredBy: referredByMap,
+          isPrimary: contactData['is_primary_contact'] ?? false,
+        );
+      }).toList();
+      
+      // Cache the API contacts to local storage
+      await ContactService.cacheApiAllContacts(apiContacts);
+      
+      setContacts(apiContacts, updateContactsState);
+      setLoading(false, updateLoadingState);
+    } else {
+      // Handle error - Try to load from cache if API fails
       final cachedContacts = await ContactService.getAllContactsFromStorage();
       setContacts(cachedContacts, updateContactsState);
       setLoading(false, updateLoadingState);
       
       if (cachedContacts.isEmpty) {
-        showErrorSnackBar(context, 'Error: ${e.toString()}');
+        showErrorSnackBar(context, 'Failed to load all contacts');
       } else {
-        showErrorSnackBar(context, 'Using cached contacts - ${e.toString()}');
+        showErrorSnackBar(context, 'Using cached contacts - API request failed');
       }
     }
+  } catch (e) {
+    print('Error fetching all contacts: $e'); // Add detailed logging
+    // Load from cache in case of error
+    final cachedContacts = await ContactService.getAllContactsFromStorage();
+    setContacts(cachedContacts, updateContactsState);
+    setLoading(false, updateLoadingState);
+    
+    if (cachedContacts.isEmpty) {
+      showErrorSnackBar(context, 'Error: ${e.toString()}');
+    } else {
+      showErrorSnackBar(context, 'Using cached contacts - ${e.toString()}');
+    }
   }
+}
   
   void showErrorSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
