@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'contact_logic.dart';
 import 'edit_contact.dart';
+import 'edit_all_contact.dart';
+import 'edit_primary_contact.dart';
 
 class DetailedContactPage extends StatefulWidget {
   final Contact contact;
@@ -368,20 +370,22 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
   }
 
   void _navigateToEditContact() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => EditContactScreen(contact: _contact),
-      ),
-    );
+  final result = await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => _contact.type == ContactType.primary 
+          ? EditPrimaryContactScreen(contact: _contact)
+          : EditAllContactScreen(contact: _contact),
+    ),
+  );
 
-    // If contact was edited successfully, update the UI
-    if (result != null && result is Contact) {
-      setState(() {
-        _contact = result;
-      });
-    }
+  // If contact was edited successfully, update the UI
+  if (result != null && result is Contact) {
+    setState(() {
+      _contact = result;
+    });
   }
+}
 }
 
 // Create a separate EditContactScreen for full screen editing
