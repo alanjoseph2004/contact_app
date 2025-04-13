@@ -96,7 +96,6 @@ class _EditPrimaryContactScreenState extends State<EditPrimaryContactScreen> {
         _fetchConnections(),
         _fetchConstituencies(),
         _fetchTagData(),
-        _fetchContactTags(),
       ]);
       
       // After loading constituencies, update available cities
@@ -232,37 +231,7 @@ class _EditPrimaryContactScreenState extends State<EditPrimaryContactScreen> {
     }
   }
   
-  // API Call to fetch tags for this contact
-  Future<void> _fetchContactTags() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? token = prefs.getString('jwt_token');
-
-    if (token == null || token.isEmpty) {
-      throw Exception("JWT token is missing");
-    }
-
-    final response = await http.get(
-      Uri.parse('http://51.21.152.136:8000/contact/primary-contact/${widget.contact.id}/tags/'),
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      setState(() {
-        _tags = data.map((tag) => {
-          'id': tag['id'],
-          'name': tag['tag_name'],
-          'tag_category': tag['tag_category'],
-          'category_id': tag['category_id'],
-        }).toList();
-      });
-    } else {
-      // Just log the error but don't throw, as this isn't critical
-      print('Failed to load contact tags: ${response.statusCode}');
-    }
-  }
+  
 
   // Update available tag names when category is selected
   void _updateAvailableTagNames() {
@@ -332,102 +301,117 @@ class _EditPrimaryContactScreenState extends State<EditPrimaryContactScreen> {
   }
 
   Future<void> _updateContact() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-    
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-    
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final String? token = prefs.getString('jwt_token');
-
-      if (token == null || token.isEmpty) {
-        throw Exception("JWT token is missing");
-      }
-      
-      // Format the data according to the API schema
-      final Map<String, dynamic> requestBody = {
-        'contact': {
-          'first_name': _firstNameController.text,
-          'last_name': _lastNameController.text.isEmpty ? null : _lastNameController.text,
-          'email': _emailController.text.isEmpty ? null : _emailController.text,
-          'country_code': _countryCodeController.text,
-          'phone': _phoneController.text,
-          'note': _noteController.text.isEmpty ? null : _noteController.text,
-          'address': _addressController.text.isEmpty ? null : _addressController.text,
-          'city': _selectedCity,
-          'constituency': _selectedConstituency,
-        },
-        'priority': _selectedPriority,
-        'connection': _selectedConnection,
-        'tags': _tags.map((tag) => tag['id']).toList(),
-      };
-      
-      final response = await http.put(
-        Uri.parse('http://51.21.152.136:8000/contact/primary-contact/update/${widget.contact.id}/'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(requestBody),
-      );
-      print('Contact ID: ${widget.contact.id}');
-
-      
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        
-        // Create updated contact object based on the Contact class definition
-        final updatedContact = Contact(
-          id: responseData['contact']['id'].toString(),
-          firstName: responseData['contact']['first_name'],
-          lastName: responseData['contact']['last_name'],
-          countryCode: responseData['contact']['country_code'],
-          phone: responseData['contact']['phone'],
-          email: responseData['contact']['email'],
-          note: responseData['contact']['note'],
-          address: responseData['contact']['address'],
-          city: responseData['contact']['city']?.toString(),
-          constituency: responseData['contact']['constituency']?.toString(),
-          avatarUrl: widget.contact.avatarUrl, // Keep existing avatar
-          hasMessages: widget.contact.hasMessages, // Maintain existing value
-          type: ContactType.primary,
-          priority: responseData['priority'],
-          connection: responseData['connection']?.toString(),
-          tags: responseData['tags']?.map<String>((tag) => tag.toString()).toList(),
-          isPrimary: true,
-          referredBy: null, // Primary contacts don't have referrals
-        );
-        
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Contact updated successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        
-        // Return to previous screen with updated contact
-        Navigator.pop(context, updatedContact);
-      } else {
-        setState(() {
-          _errorMessage = 'Failed to update contact. Status code: ${response.statusCode}';
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Error: ${e.toString()}';
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+  if (!_formKey.currentState!.validate()) {
+    return;
   }
+  
+  setState(() {
+    _isLoading = true;
+    _errorMessage = null;
+  });
+  
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('jwt_token');
+
+    if (token == null || token.isEmpty) {
+      throw Exception("JWT token is missing");
+    }
+    
+    // Format the data according to the API schema
+    final Map<String, dynamic> requestBody = {
+      'contact': {
+        'first_name': _firstNameController.text,
+        'last_name': _lastNameController.text.isEmpty ? null : _lastNameController.text,
+        'email': _emailController.text.isEmpty ? null : _emailController.text,
+        'country_code': _countryCodeController.text,
+        'phone': _phoneController.text,
+        'note': _noteController.text.isEmpty ? null : _noteController.text,
+        'address': _addressController.text.isEmpty ? null : _addressController.text,
+        'city': _selectedCity,
+        
+      },
+      'priority': _selectedPriority,
+      'connection': _selectedConnection,
+      'tags': _tags.map((tag) => tag['id']).toList(),
+    };
+    
+    // Use directly the ID without parsing to int if it's already a string
+    final url = 'http://51.21.152.136:8000/contact/primary-contact/update/${int.parse(widget.contact.id)}/';
+    
+    print('Request URL: $url');
+    print('Request body: ${jsonEncode(requestBody)}');
+
+    final response = await http.put(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(requestBody),
+    );
+    
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.body}');
+    
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+      
+      // Create updated contact object based on the Contact class definition
+      final updatedContact = Contact(
+        id: responseData['contact']['id'].toString(),
+        firstName: responseData['contact']['first_name'],
+        lastName: responseData['contact']['last_name'],
+        countryCode: responseData['contact']['country_code'],
+        phone: responseData['contact']['phone'],
+        email: responseData['contact']['email'],
+        note: responseData['contact']['note'],
+        address: responseData['contact']['address'],
+        city: responseData['contact']['city']?.toString(),
+        constituency: responseData['contact']['constituency']?.toString(),
+        avatarUrl: widget.contact.avatarUrl, // Keep existing avatar
+        hasMessages: widget.contact.hasMessages, // Maintain existing value
+        type: ContactType.primary,
+        priority: responseData['priority'],
+        connection: responseData['connection']?.toString(),
+        tags: responseData['tags']?.map<String>((tag) => tag.toString()).toList(),
+        isPrimary: true,
+        referredBy: null, // Primary contacts don't have referrals
+      );
+      
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Contact updated successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      
+      // Return to previous screen with updated contact
+      Navigator.pop(context, updatedContact);
+    } else {
+      setState(() {
+        _errorMessage = 'Failed to update contact. Status code: ${response.statusCode}';
+        try {
+          final responseData = jsonDecode(response.body);
+          if (responseData['message'] != null) {
+            _errorMessage = '${_errorMessage}: ${responseData['message']}';
+          }
+        } catch (e) {
+          // If response body can't be parsed, use the existing error message
+        }
+      });
+    }
+  } catch (e) {
+    setState(() {
+      _errorMessage = 'Error: ${e.toString()}';
+    });
+  } finally {
+    setState(() {
+      _isLoading = false;
+    });
+  }
+}
 
   @override
   Widget build(BuildContext context) {
