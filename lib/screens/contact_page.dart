@@ -144,6 +144,7 @@ class ContactsPageLogic {
             connection: connectionStr,  // Use the extracted connection string
             tags: tagList,  // Use the extracted tag list
             isPrimary: true, // It's a primary contact
+            primaryID: contactData['id']?.toString() ?? '',
           );
         }).toList();
         
@@ -278,6 +279,7 @@ class ContactsPageLogic {
             connection: connectionStr,
             tags: tagList,
             isPrimary: true,
+            primaryID: contactData['id']?.toString() ?? '',
           );
           
           updatedContacts.add(contact);
@@ -370,6 +372,7 @@ class ContactsPageLogic {
             hasMessages: false, // This field is not in your API response
             referredBy: referredByMap,
             isPrimary: contactData['is_primary_contact'] ?? false,
+            primaryID: null,
           );
         }).toList();
         
@@ -493,6 +496,7 @@ class ContactsPageLogic {
             hasMessages: false,
             referredBy: referredByMap,
             isPrimary: contactData['is_primary_contact'] ?? false,
+            primaryID: null,
           );
           
           updatedContacts.add(contact);

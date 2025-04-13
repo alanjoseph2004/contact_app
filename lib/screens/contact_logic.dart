@@ -22,6 +22,7 @@ class Contact {
   final Map<String, dynamic>? referredBy; // Additional referral details for all contacts
   final List<String>? tags;
   final bool isPrimary;      // Flag to indicate if it's a primary contact
+  final String? primaryID;   // Only applicable for primary contacts
 
   Contact({
     required this.id,
@@ -42,12 +43,18 @@ class Contact {
     this.referredBy,
     this.tags,
     this.isPrimary = false,
+    this.primaryID,
   }) {
     // Validate priority for primary contacts
     if (type == ContactType.primary && priority != null) {
       if (priority! < 1 || priority! > 5) {
         throw ArgumentError('Priority for primary contacts must be between 1 and 5');
       }
+    }
+    
+    // Validate primaryID is only used for primary contacts
+    if (primaryID != null && type != ContactType.primary) {
+      throw ArgumentError('primaryID can only be set for primary contacts');
     }
   }
 
@@ -78,6 +85,7 @@ class Contact {
       'referredBy': referredBy,
       'tags': tags,
       'isPrimary': isPrimary,
+      'primaryID': type == ContactType.primary ? primaryID : null,
     };
   }
 
@@ -102,6 +110,7 @@ class Contact {
       referredBy: json['referredBy'],
       tags: json['tags'] != null ? List<String>.from(json['tags']) : null,
       isPrimary: json['isPrimary'] ?? false,
+      primaryID: json['type'] == ContactType.primary.index ? json['primaryID'] : null,
     );
   }
 }
@@ -268,6 +277,11 @@ class ContactService {
         throw ArgumentError('Priority for primary contacts must be between 1 and 5');
       }
     }
+    
+    // Validate primaryID is only used for primary contacts
+    if (contact.primaryID != null && contact.type != ContactType.primary) {
+      throw ArgumentError('primaryID can only be set for primary contacts');
+    }
 
     contacts.add(contact);
     
@@ -296,6 +310,11 @@ class ContactService {
         if (updatedContact.priority! < 1 || updatedContact.priority! > 5) {
           throw ArgumentError('Priority for primary contacts must be between 1 and 5');
         }
+      }
+      
+      // Validate primaryID is only used for primary contacts
+      if (updatedContact.primaryID != null && updatedContact.type != ContactType.primary) {
+        throw ArgumentError('primaryID can only be set for primary contacts');
       }
 
       contacts[index] = updatedContact;
@@ -387,6 +406,14 @@ class ContactService {
     final contacts = await getContacts();
     return contacts.where((c) => 
       c.tags != null && c.tags!.contains(tag)
+    ).toList();
+  }
+  
+  // Get contacts by primaryID
+  static Future<List<Contact>> getContactsByPrimaryID(String primaryID) async {
+    final contacts = await getPrimaryContactsFromStorage();
+    return contacts.where((c) => 
+      c.primaryID == primaryID
     ).toList();
   }
 }

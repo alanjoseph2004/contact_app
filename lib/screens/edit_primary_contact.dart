@@ -335,9 +335,9 @@ class _EditPrimaryContactScreenState extends State<EditPrimaryContactScreen> {
       'connection': _selectedConnection,
       'tags': _tags.map((tag) => tag['id']).toList(),
     };
-    
+    final String primaryID = widget.contact.primaryID ?? widget.contact.id;
     // Use directly the ID without parsing to int if it's already a string
-    final url = 'http://51.21.152.136:8000/contact/primary-contact/update/${int.parse(widget.contact.id)}/';
+    final url = 'http://51.21.152.136:8000/contact/primary-contact/update/${int.parse(primaryID)}/';
     
     print('Request URL: $url');
     print('Request body: ${jsonEncode(requestBody)}');
@@ -376,7 +376,8 @@ class _EditPrimaryContactScreenState extends State<EditPrimaryContactScreen> {
         connection: responseData['connection']?.toString(),
         tags: responseData['tags']?.map<String>((tag) => tag.toString()).toList(),
         isPrimary: true,
-        referredBy: null, // Primary contacts don't have referrals
+        referredBy: null,
+        primaryID: primaryID, // Primary contacts don't have referrals
       );
       
       // Show success message
