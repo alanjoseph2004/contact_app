@@ -8,9 +8,9 @@ class DetailedContactPage extends StatefulWidget {
   final Contact contact;
 
   const DetailedContactPage({
-    Key? key,
+    super.key,
     required this.contact,
-  }) : super(key: key);
+  });
 
   @override
   State<DetailedContactPage> createState() => _DetailedContactPageState();
@@ -393,9 +393,9 @@ class EditContactScreen extends StatelessWidget {
   final Contact contact;
 
   const EditContactScreen({
-    Key? key,
+    super.key,
     required this.contact,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

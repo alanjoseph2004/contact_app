@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class BulkContactsUploadPage extends StatefulWidget {
-  const BulkContactsUploadPage({Key? key}) : super(key: key);
+  const BulkContactsUploadPage({super.key});
 
   @override
   State<BulkContactsUploadPage> createState() => _BulkContactsUploadPageState();
@@ -28,7 +28,7 @@ class _BulkContactsUploadPageState extends State<BulkContactsUploadPage> {
   String? _errorMessage;
 
   // List of contact forms
-  List<ContactFormData> _contactForms = [];
+  final List<ContactFormData> _contactForms = [];
 
   @override
   void initState() {
@@ -433,14 +433,14 @@ class ContactFormWidget extends StatefulWidget {
   final int index;
 
   const ContactFormWidget({
-    Key? key,
+    super.key,
     required this.contactForm,
     required this.constituencies,
     required this.getAvailableCities,
     required this.onRemove,
     required this.showRemoveButton,
     required this.index,
-  }) : super(key: key);
+  });
 
   @override
   State<ContactFormWidget> createState() => _ContactFormWidgetState();

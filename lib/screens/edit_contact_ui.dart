@@ -181,7 +181,7 @@ class EditContactUI extends StatelessWidget {
                         value: primaryContact.id,
                         child: Text(primaryContact.name),
                       )
-                    ).toList(),
+                    ),
                   ],
                   onChanged: onConnectionChanged,
                 ),
@@ -347,6 +347,6 @@ class EditContactUI extends StatelessWidget {
 // Extension needed for capitalizing strings (used in contact type dropdown)
 extension StringExtension on String {
   String Capitalize() {
-    return "${this[0].toUpperCase()}${this.substring(1)}";
+    return "${this[0].toUpperCase()}${substring(1)}";
   }
 }
