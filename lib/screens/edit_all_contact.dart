@@ -58,9 +58,10 @@ class _EditAllContactScreenState extends State<EditAllContactScreen> {
     // Set initial values for dropdowns if available
     _selectedCity = widget.contact.city != null ? int.tryParse(widget.contact.city!) : null;
     _selectedConstituency = widget.contact.constituency != null ? int.tryParse(widget.contact.constituency!) : null;
-   _selectedReferredBy = widget.contact.referredBy != null && widget.contact.referredBy!['id'] != null 
-    ? int.tryParse(widget.contact.referredBy!['id'].toString()) 
-    : null;
+    _selectedReferredBy = widget.contact.referredBy != null && widget.contact.referredBy!['id'] != null 
+      ? int.tryParse(widget.contact.referredBy!['id'].toString()) 
+      : null;
+      
     // Load all necessary data from APIs
     _loadInitialData();
   }
@@ -256,9 +257,14 @@ class _EditAllContactScreenState extends State<EditAllContactScreen> {
           connection: null, // Only set for primary contacts via a different endpoint
           tags: null, // Only set for primary contacts via a different endpoint
           isPrimary: responseData['is_primary_contact'] == true,
-          referredBy: responseData['referred_by']
-
-
+          referredBy: responseData['referred_by'] != null ? {
+            'id': responseData['referred_by'],
+            // We would need to fetch additional details from the primary contacts list
+            'name': _primaryContacts.firstWhere(
+              (contact) => contact['id'] == responseData['referred_by'], 
+              orElse: () => {'name': 'Unknown'}
+            )['name'],
+          } : null,
         );
         
         // Show success message
