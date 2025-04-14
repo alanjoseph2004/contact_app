@@ -32,13 +32,14 @@ class _ContactsPageState extends State<ContactsPage> {
   }
   
   // Load contacts method in UI class that calls the logic class
-  Future<void> _loadContacts() async {
-    await _logic.loadContacts(
-      context,
-      (isLoading) => setState(() => _isLoading = isLoading),
-      (contacts) => setState(() => _contacts = contacts)
-    );
-  }
+  // In _ContactsPageState class
+Future<void> _loadContacts() async {
+  await _logic.loadContacts(
+    context,
+    (isLoading) => setState(() => _isLoading = isLoading),
+    (contacts) => setState(() => _contacts = contacts)
+  );
+}
 
   @override
   Widget build(BuildContext context) {

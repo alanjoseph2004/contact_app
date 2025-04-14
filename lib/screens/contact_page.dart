@@ -325,95 +325,106 @@ class ContactsPageLogic {
 }
   
   // Fetch all contacts from API - called only once initially
-  Future<void> fetchAllContactsFromAPI(BuildContext context, Function(bool) updateLoadingState, Function(List<Contact>) updateContactsState) async {
-    try {
-      final response = await http.get(
-        Uri.parse(_allContactsEndpoint),
-      );
+  // In ContactsPageLogic class
+// Update the fetchAllContactsFromAPI method
+
+Future<void> fetchAllContactsFromAPI(BuildContext context, Function(bool) updateLoadingState, Function(List<Contact>) updateContactsState) async {
+  try {
+    final response = await http.get(
+      Uri.parse(_allContactsEndpoint),
+    );
+    
+    if (response.statusCode == 200) {
+      // Parse the response as a Map first
+      final Map<String, dynamic> responseData = json.decode(response.body);
       
-      if (response.statusCode == 200) {
-        // Parse the response as a Map first
-        final Map<String, dynamic> responseData = json.decode(response.body);
-        
-        // Extract the contacts array from the 'results' field
-        final List<dynamic> contactsData = responseData['results'] ?? [];
-        
-        // Convert API response to Contact objects
-        final List<Contact> apiContacts = contactsData.map<Contact>((contactData) {
-          // Handle city properly - it's an object not a string
-          String cityStr = '';
-          if (contactData['city'] != null && contactData['city'] is Map) {
-            cityStr = contactData['city']['city'] ?? '';
-          }
-          
-          Map<String, dynamic>? referredByMap;
-          if (contactData['referred_by'] != null && contactData['referred_by'] is Map) {
-            referredByMap = {
-              'referred_id': contactData['referred_by']['referred_id']?.toString() ?? '',
-              'referred_first_name': contactData['referred_by']['referred_first_name'] ?? '',
-              'referred_last_name': contactData['referred_by']['referred_last_name'] ?? '',
-              'referred_country_code': contactData['referred_by']['referred_country_code'] ?? '',
-              'referred_phone': contactData['referred_by']['referred_phone'] ?? '',
-            };
-          }
-          
-          return Contact(
-            id: contactData['id']?.toString() ?? '',
-            firstName: contactData['first_name'] ?? '',
-            lastName: contactData['last_name'],
-            countryCode: contactData['country_code'] ?? '',
-            phone: contactData['phone'] ?? '',
-            email: contactData['email'],
-            type: ContactType.all,
-            note: contactData['note'],
-            address: contactData['address'],
-            city: cityStr,
-            constituency: contactData['constituency'] ?? '',
-            hasMessages: false, // This field is not in your API response
-            referredBy: referredByMap,
-            isPrimary: contactData['is_primary_contact'] ?? false,
-            primaryID: null,
-          );
-        }).toList();
-        
-        // Cache the API contacts to local storage
-        await ContactService.saveAllContacts(apiContacts);
-        
-        // Save current timestamp for future timed retrieval
-        await _saveLastFetchTimestamp(ContactType.all);
-        
-        setContacts(apiContacts, updateContactsState);
-        setLoading(false, updateLoadingState);
-      } else {
-        // Handle error - Try to load from cache if API fails
-        final cachedContacts = await ContactService.getAllContactsFromStorage();
-        setContacts(cachedContacts, updateContactsState);
-        setLoading(false, updateLoadingState);
-        
-        if (cachedContacts.isEmpty) {
-          showErrorSnackBar(context, 'Failed to load all contacts');
-        } else {
-          showErrorSnackBar(context, 'Using cached contacts - API request failed');
+      // Extract the contacts array from the 'results' field
+      final List<dynamic> contactsData = responseData['results'] ?? [];
+      
+      // Convert API response to Contact objects
+      final List<Contact> apiContacts = contactsData.map<Contact>((contactData) {
+        // Handle city properly - it's an object not a string
+        String cityStr = '';
+        if (contactData['city'] != null && contactData['city'] is Map) {
+          cityStr = contactData['city']['city'] ?? '';
         }
-      }
-    } catch (e) {
-      print('Error fetching all contacts: $e'); // Add detailed logging
-      // Load from cache in case of error
+        
+        Map<String, dynamic>? referredByMap;
+        if (contactData['referred_by'] != null && contactData['referred_by'] is Map) {
+          referredByMap = {
+            'referred_id': contactData['referred_by']['referred_id']?.toString() ?? '',
+            'referred_first_name': contactData['referred_by']['referred_first_name'] ?? '',
+            'referred_last_name': contactData['referred_by']['referred_last_name'] ?? '',
+            'referred_country_code': contactData['referred_by']['referred_country_code'] ?? '',
+            'referred_phone': contactData['referred_by']['referred_phone'] ?? '',
+          };
+        }
+        
+        return Contact(
+          id: contactData['id']?.toString() ?? '',
+          firstName: contactData['first_name'] ?? '',
+          lastName: contactData['last_name'],
+          countryCode: contactData['country_code'] ?? '',
+          phone: contactData['phone'] ?? '',
+          email: contactData['email'],
+          type: ContactType.all,
+          note: contactData['note'],
+          address: contactData['address'],
+          city: cityStr,
+          constituency: contactData['constituency'] ?? '',
+          hasMessages: false, // This field is not in your API response
+          referredBy: referredByMap,
+          isPrimary: contactData['is_primary_contact'] ?? false,
+          primaryID: null,
+        );
+      }).toList();
+      
+      // Filter out primary contacts from the display
+      final nonPrimaryContacts = apiContacts.where((contact) => !contact.isPrimary).toList();
+      
+      // Cache all contacts (including primary) to local storage
+      await ContactService.saveAllContacts(apiContacts);
+      
+      // Save current timestamp for future timed retrieval
+      await _saveLastFetchTimestamp(ContactType.all);
+      
+      // Only show non-primary contacts in the UI
+      setContacts(nonPrimaryContacts, updateContactsState);
+      setLoading(false, updateLoadingState);
+    } else {
+      // Handle error - Try to load from cache if API fails
       final cachedContacts = await ContactService.getAllContactsFromStorage();
-      setContacts(cachedContacts, updateContactsState);
+      // Filter out primary contacts from cached contacts
+      final nonPrimaryContacts = cachedContacts.where((contact) => !contact.isPrimary).toList();
+      setContacts(nonPrimaryContacts, updateContactsState);
       setLoading(false, updateLoadingState);
       
       if (cachedContacts.isEmpty) {
-        showErrorSnackBar(context, 'Error: ${e.toString()}');
+        showErrorSnackBar(context, 'Failed to load all contacts');
       } else {
-        showErrorSnackBar(context, 'Using cached contacts - ${e.toString()}');
+        showErrorSnackBar(context, 'Using cached contacts - API request failed');
       }
     }
+  } catch (e) {
+    print('Error fetching all contacts: $e'); // Add detailed logging
+    // Load from cache in case of error
+    final cachedContacts = await ContactService.getAllContactsFromStorage();
+    // Filter out primary contacts from cached contacts
+    final nonPrimaryContacts = cachedContacts.where((contact) => !contact.isPrimary).toList();
+    setContacts(nonPrimaryContacts, updateContactsState);
+    setLoading(false, updateLoadingState);
+    
+    if (cachedContacts.isEmpty) {
+      showErrorSnackBar(context, 'Error: ${e.toString()}');
+    } else {
+      showErrorSnackBar(context, 'Using cached contacts - ${e.toString()}');
+    }
   }
+}
 
   // Fetch updated all contacts using timed retrieval
   Future<void> fetchUpdatedAllContacts(BuildContext context, Function(bool) updateLoadingState, 
-    Function(List<Contact>) updateContactsState) async {
+  Function(List<Contact>) updateContactsState) async {
   try {
     // Get last fetch timestamp
     String? lastFetchTime = await _getLastFetchTimestamp(ContactType.all);
@@ -425,7 +436,9 @@ class ContactsPageLogic {
     
     // Load cached contacts first
     final cachedContacts = await ContactService.getAllContactsFromStorage();
-    setContacts(cachedContacts, updateContactsState);
+    // Filter out primary contacts
+    final nonPrimaryContacts = cachedContacts.where((contact) => !contact.isPrimary).toList();
+    setContacts(nonPrimaryContacts, updateContactsState);
     
     // Encode the timestamp for URL safety
     final encodedTimestamp = Uri.encodeComponent(lastFetchTime);
@@ -517,25 +530,27 @@ class ContactsPageLogic {
       }
       
       // Convert back to list
-      final mergedContacts = contactMap.values.toList();
+      final allMergedContacts = contactMap.values.toList();
       
-      // Update cache and state
-      await ContactService.saveAllContacts(mergedContacts);
+      // Update cache with all contacts
+      await ContactService.saveAllContacts(allMergedContacts);
       
       // Save new timestamp
       await _saveLastFetchTimestamp(ContactType.all);
       
-      setContacts(mergedContacts, updateContactsState);
+      // Filter out primary contacts before updating UI
+      final nonPrimaryContacts = allMergedContacts.where((contact) => !contact.isPrimary).toList();
+      setContacts(nonPrimaryContacts, updateContactsState);
       setLoading(false, updateLoadingState);
     } else {
       print('Failed to retrieve updates: ${response.statusCode} - ${response.body.substring(0, min(100, response.body.length))}');
-      // Already showing cached contacts, just update loading state
+      // Already showing filtered cached contacts, just update loading state
       setLoading(false, updateLoadingState);
       showErrorSnackBar(context, 'Failed to retrieve contact updates (Status: ${response.statusCode})');
     }
   } catch (e) {
     print('Error fetching updated all contacts: $e');
-    // Already showing cached contacts, just update loading state
+    // Already showing filtered cached contacts, just update loading state
     setLoading(false, updateLoadingState);
     showErrorSnackBar(context, 'Error getting updates: ${e.toString()}');
   }
