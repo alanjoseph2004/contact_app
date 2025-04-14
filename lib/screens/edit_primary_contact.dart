@@ -585,6 +585,7 @@ class _EditPrimaryContactScreenState extends State<EditPrimaryContactScreen> {
                       value: _selectedConstituency,
                       decoration: _inputDecoration('Constituency', Icons.location_city),
                       hint: const Text('Select Constituency'),
+                      isExpanded: true, // This will prevent overflow
                       items: [
                         const DropdownMenuItem<int>(
                           value: null,
@@ -592,7 +593,10 @@ class _EditPrimaryContactScreenState extends State<EditPrimaryContactScreen> {
                         ),
                         ..._constituencies.map((constituency) => DropdownMenuItem<int>(
                           value: constituency['id'],
-                          child: Text(constituency['name']),
+                          child: Text(
+                            constituency['name'],
+                            overflow: TextOverflow.ellipsis, // Handle text overflow
+                          ),
                         )),
                       ],
                       onChanged: (value) {
@@ -609,6 +613,7 @@ class _EditPrimaryContactScreenState extends State<EditPrimaryContactScreen> {
                       value: _selectedCity,
                       decoration: _inputDecoration('City', Icons.location_city),
                       hint: const Text('Select City'),
+                      isExpanded: true, // This will prevent overflow
                       items: [
                         const DropdownMenuItem<int>(
                           value: null,
@@ -616,7 +621,10 @@ class _EditPrimaryContactScreenState extends State<EditPrimaryContactScreen> {
                         ),
                         ..._availableCities.map((city) => DropdownMenuItem<int>(
                           value: city['id'],
-                          child: Text(city['name']),
+                          child: Text(
+                            city['name'],
+                            overflow: TextOverflow.ellipsis, // Handle text overflow
+                          ),
                         )),
                       ],
                       onChanged: (value) {
@@ -679,6 +687,7 @@ class _EditPrimaryContactScreenState extends State<EditPrimaryContactScreen> {
                       value: _selectedConnection,
                       decoration: _inputDecoration('Connection', Icons.people),
                       hint: const Text('Select Connection'),
+                      isExpanded: true, // This will prevent overflow
                       items: [
                         const DropdownMenuItem<int>(
                           value: null,
@@ -686,7 +695,10 @@ class _EditPrimaryContactScreenState extends State<EditPrimaryContactScreen> {
                         ),
                         ..._connections.map((connection) => DropdownMenuItem<int>(
                           value: connection['id'],
-                          child: Text(connection['name']),
+                          child: Text(
+                            connection['name'],
+                            overflow: TextOverflow.ellipsis, // Handle text overflow
+                          ),
                         )),
                       ],
                       onChanged: (value) {
@@ -700,70 +712,81 @@ class _EditPrimaryContactScreenState extends State<EditPrimaryContactScreen> {
                     // Tags section
                     _buildSectionTitle('Tags'),
                     
-                    // Tag selector
-                    Row(
+                    // Tag selector - Modified to use Column instead of Row for better space utilization
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Tag Category
-                        Expanded(
-                          child: DropdownButtonFormField<int>(
-                            value: _selectedTagCategory,
-                            decoration: _inputDecoration('Tag Category', Icons.category),
-                            hint: const Text('Select Category'),
-                            items: [
-                              const DropdownMenuItem<int>(
-                                value: null,
-                                child: Text('Select Category'),
+                        DropdownButtonFormField<int>(
+                          value: _selectedTagCategory,
+                          decoration: _inputDecoration('Tag Category', Icons.category),
+                          hint: const Text('Select Category'),
+                          isExpanded: true, // This will prevent overflow
+                          items: [
+                            const DropdownMenuItem<int>(
+                              value: null,
+                              child: Text('Select Category'),
+                            ),
+                            ..._tagCategories.map((category) => DropdownMenuItem<int>(
+                              value: category['id'],
+                              child: Text(
+                                category['name'],
+                                overflow: TextOverflow.ellipsis, // Handle text overflow
                               ),
-                              ..._tagCategories.map((category) => DropdownMenuItem<int>(
-                                value: category['id'],
-                                child: Text(category['name']),
-                              )),
-                            ],
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedTagCategory = value;
-                                _updateAvailableTagNames();
-                              });
-                            },
-                          ),
+                            )),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedTagCategory = value;
+                              _updateAvailableTagNames();
+                            });
+                          },
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(height: 16),
                         
-                        // Tag Name
-                        Expanded(
-                          child: DropdownButtonFormField<int>(
-                            value: _selectedTagName,
-                            decoration: _inputDecoration('Tag Name', Icons.label),
-                            hint: const Text('Select Tag'),
-                            items: [
-                              const DropdownMenuItem<int>(
-                                value: null,
-                                child: Text('Select Tag'),
+                        // Tag Name with Add Button
+                        Row(
+                          children: [
+                            // Tag Name
+                            Expanded(
+                              child: DropdownButtonFormField<int>(
+                                value: _selectedTagName,
+                                decoration: _inputDecoration('Tag Name', Icons.label),
+                                hint: const Text('Select Tag'),
+                                isExpanded: true, // This will prevent overflow
+                                items: [
+                                  const DropdownMenuItem<int>(
+                                    value: null,
+                                    child: Text('Select Tag'),
+                                  ),
+                                  ..._availableTagNames.map((tag) => DropdownMenuItem<int>(
+                                    value: tag['id'],
+                                    child: Text(
+                                      tag['name'],
+                                      overflow: TextOverflow.ellipsis, // Handle text overflow
+                                    ),
+                                  )),
+                                ],
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedTagName = value;
+                                  });
+                                },
                               ),
-                              ..._availableTagNames.map((tag) => DropdownMenuItem<int>(
-                                value: tag['id'],
-                                child: Text(tag['name']),
-                              )),
-                            ],
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedTagName = value;
-                              });
-                            },
-                          ),
-                        ),
-                        
-                        // Add Tag Button
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: _selectedTagName != null ? _addTag : null,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryColor,
-                            padding: const EdgeInsets.all(12),
-                            shape: const CircleBorder(),
-                          ),
-                          child: const Icon(Icons.add, color: Colors.white),
+                            ),
+                            
+                            // Add Tag Button
+                            const SizedBox(width: 8),
+                            ElevatedButton(
+                              onPressed: _selectedTagName != null ? _addTag : null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primaryColor,
+                                padding: const EdgeInsets.all(12),
+                                shape: const CircleBorder(),
+                              ),
+                              child: const Icon(Icons.add, color: Colors.white),
+                            ),
+                          ],
                         ),
                       ],
                     ),
