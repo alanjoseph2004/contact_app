@@ -32,14 +32,13 @@ class _ContactsPageState extends State<ContactsPage> {
   }
   
   // Load contacts method in UI class that calls the logic class
-  // In _ContactsPageState class
-Future<void> _loadContacts() async {
-  await _logic.loadContacts(
-    context,
-    (isLoading) => setState(() => _isLoading = isLoading),
-    (contacts) => setState(() => _contacts = contacts)
-  );
-}
+  Future<void> _loadContacts() async {
+    await _logic.loadContacts(
+      context,
+      (isLoading) => setState(() => _isLoading = isLoading),
+      (contacts) => setState(() => _contacts = contacts)
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -214,7 +213,7 @@ Future<void> _loadContacts() async {
     );
   }
 
-  // Build individual contact tile
+  // Build individual contact tile with responsive layout
   Widget _buildContactTile(Contact contact) {
     return Dismissible(
       key: Key(contact.id),
@@ -274,13 +273,24 @@ Future<void> _loadContacts() async {
             fontWeight: FontWeight.w500,
             fontSize: 16,
           ),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Use Row with ConstrainedBox for the phone number 
             Row(
               children: [
-                Text(contact.phoneNumber),
+                // Phone number that takes available space with ellipsis
+                Expanded(
+                  child: Text(
+                    contact.phoneNumber,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ),
+                // Priority badge with spacing
                 if (_selectedTab == ContactType.primary && contact.priority != null)
                   Padding(
                     padding: const EdgeInsets.only(left: 8),
@@ -311,32 +321,38 @@ Future<void> _loadContacts() async {
                     color: Colors.grey[600],
                     fontStyle: FontStyle.italic,
                   ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
           ],
         ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: const Icon(
-                Icons.message,
-                color: Colors.grey,
-              ),
-              onPressed: () {
-                // Implement message functionality
-              },
-            ),
-            IconButton(
-              icon: const Icon(
-                Icons.phone,
-                color: Colors.grey,
-              ),
-              onPressed: () {
-                // Implement call functionality
-              },
-            ),
-          ],
+        // Redesigned trailing widget with better responsiveness
+        trailing: LayoutBuilder(
+          builder: (context, constraints) {
+            // Determine if we have enough space for both buttons
+            final bool hasSpaceForBothButtons = constraints.maxWidth >= 70;
+            
+            if (hasSpaceForBothButtons) {
+              // If we have enough space, show both buttons in a row
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildActionButton(Icons.message, () {
+                    // Implement message functionality
+                  }),
+                  _buildActionButton(Icons.phone, () {
+                    // Implement call functionality
+                  }),
+                ],
+              );
+            } else {
+              // If space is limited, show a more menu button
+              return _buildActionButton(Icons.more_vert, () {
+                _showContactActions(context, contact);
+              });
+            }
+          },
         ),
         onTap: () {
           // Navigate to the detailed contact page
@@ -351,6 +367,72 @@ Future<void> _loadContacts() async {
           });
         },
       ),
+    );
+  }
+  
+  // Helper method to build compact action buttons
+  Widget _buildActionButton(IconData icon, VoidCallback onPressed) {
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onPressed,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Icon(
+            icon,
+            color: Colors.grey,
+            size: 20,
+          ),
+        ),
+      ),
+    );
+  }
+  
+  // Show contact actions in a bottom sheet on smaller screens
+  void _showContactActions(BuildContext context, Contact contact) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ListTile(
+                leading: const Icon(Icons.message),
+                title: const Text('Message'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // Implement message functionality
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.phone),
+                title: const Text('Call'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // Implement call functionality
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.info_outline),
+                title: const Text('View Details'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DetailedContactPage(contact: contact),
+                    ),
+                  ).then((_) {
+                    _loadContacts();
+                  });
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -378,152 +460,161 @@ Future<void> _loadContacts() async {
   }
 
   void _showContactCreationOptions() {
-  // Calculate position to show menu above the FAB
-  final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
-  
-  // Position the menu further above the FAB
-  final position = RelativeRect.fromRect(
-    Rect.fromLTRB(
-      MediaQuery.of(context).size.width - 200, // Left position
-      MediaQuery.of(context).size.height - 270, // Top position (moved higher above FAB)
-      16, // Right padding
-      150,  // Bottom padding (increased to move options up)
-    ),
-    Offset.zero & (overlay?.size ?? Size.zero),
-  );
+    // Calculate position to show menu above the FAB
+    final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
+    
+    // Position the menu further above the FAB
+    final position = RelativeRect.fromRect(
+      Rect.fromLTRB(
+        MediaQuery.of(context).size.width - 200, // Left position
+        MediaQuery.of(context).size.height - 270, // Top position (moved higher above FAB)
+        16, // Right padding
+        150,  // Bottom padding (increased to move options up)
+      ),
+      Offset.zero & (overlay?.size ?? Size.zero),
+    );
 
-  // Show the popup menu with transparent background
-  showMenu(
-    context: context,
-    position: position,
-    elevation: 4,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-    color: Colors.transparent, // Transparent background
-    items: [
-      PopupMenuItem(
-        padding: EdgeInsets.zero,
-        value: 'single',
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          margin: const EdgeInsets.only(bottom: 8),
-          child: ListTile(
-            leading: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: _logic.primaryColor, // Use your blue theme color
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.person, color: Colors.white, size: 20),
+    // Show the popup menu with transparent background
+    showMenu(
+      context: context,
+      position: position,
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      color: Colors.transparent, // Transparent background
+      items: [
+        PopupMenuItem(
+          padding: EdgeInsets.zero,
+          value: 'single',
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            title: const Text(
-              'Create Single Contact',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
+            margin: const EdgeInsets.only(bottom: 8),
+            child: ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _logic.primaryColor, // Use your blue theme color
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.person, color: Colors.white, size: 20),
               ),
-            ),
-          ),
-        ),
-      ),
-      PopupMenuItem(
-        padding: EdgeInsets.zero,
-        value: 'bulk',
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: ListTile(
-            leading: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: _logic.primaryColor, // Use your blue theme color
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.people, color: Colors.white, size: 20),
-            ),
-            title: const Text(
-              'Create Bulk Contacts',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
+              title: const Text(
+                'Create Single Contact',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ),
         ),
-      ),
-    ],
-  ).then((value) {
-    if (value == 'single') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const NewAllContactPage()),
-      ).then((_) {
-        _loadContacts();
-      });
-    } else if (value == 'bulk') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const BulkContactsUploadPage()),
-      ).then((_) {
-        _loadContacts();
-      });
-    }
-  });
-}
+        PopupMenuItem(
+          padding: EdgeInsets.zero,
+          value: 'bulk',
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _logic.primaryColor, // Use your blue theme color
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.people, color: Colors.white, size: 20),
+              ),
+              title: const Text(
+                'Create Bulk Contacts',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    ).then((value) {
+      if (value == 'single') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const NewAllContactPage()),
+        ).then((_) {
+          _loadContacts();
+        });
+      } else if (value == 'bulk') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const BulkContactsUploadPage()),
+        ).then((_) {
+          _loadContacts();
+        });
+      }
+    });
+  }
 
   // Build bottom navigation bar
-  Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
-            spreadRadius: 0,
-            blurRadius: 10,
-          ),
-        ],
+  // Build a simplified bottom bar with only Contacts
+Widget _buildBottomNavigationBar() {
+  return Container(
+    decoration: BoxDecoration(
+      color: Colors.white,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.withOpacity(0.2),
+          spreadRadius: 0,
+          blurRadius: 10,
+        ),
+      ],
+    ),
+    // Using a simple Container instead of BottomNavigationBar
+    child: SafeArea(
+      child: Container(
+        height: 61, // Standard navigation bar height
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.contacts,
+                  color: _logic.primaryColor,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Contacts',
+                  style: TextStyle(
+                    color: _logic.primaryColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-      child: BottomNavigationBar(
-        currentIndex: 0,
-        selectedItemColor: _logic.primaryColor,
-        unselectedItemColor: Colors.grey,
-        showUnselectedLabels: true,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.contacts),
-            label: 'Contacts',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'Recents',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.star),
-            label: 'Favorites',
-          ),
-        ],
-        onTap: (index) {
-          // Handle navigation
-        },
-      ),
-    );
-  }
+    ),
+  );
+}
 }
