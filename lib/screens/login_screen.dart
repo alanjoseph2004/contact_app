@@ -1,36 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../services/auth_services.dart';
 import 'contact_page_ui.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
 
   Future<void> _login() async {
-    // Validate form first
+    // Validate the form
     if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    // Show a SnackBar if either field is empty.
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter both username/email and password.'),
-          backgroundColor: Color.fromARGB(255, 8, 2, 1),
-        ),
-      );
       return;
     }
 
@@ -39,49 +26,25 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      // Make API call to your auth endpoint
-      final response = await http.post(
-        Uri.parse('http://51.21.152.136:8000/contact/token/'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'username': _emailController.text,
-          'password': _passwordController.text,
-        }),
+      // Call the service instead of doing API call here
+      bool success = await AuthService.login(
+        _emailController.text,
+        _passwordController.text,
       );
-      response.statusCode == 200;
-      if (response.statusCode == 200) {
-        // Parse the response to get the JWT token
-        final Map<String, dynamic> data = json.decode(response.body);
-        final String token = data['access']?? '';
-        
-        // Store the token securely using shared_preferences
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('jwt_token', token);
-        
+
+      if (success && mounted) {
         // Navigate to the Contacts page
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const ContactsPage()),
-          );
-        }
-      } else {
-        // Handle authentication error
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Authentication failed: ${response.body}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const ContactsPage()),
+        );
       }
     } catch (e) {
-      // Handle network or other errors
+      // Handle errors
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text(e.toString()),
             backgroundColor: Colors.red,
           ),
         );
