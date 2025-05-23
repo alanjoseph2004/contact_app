@@ -105,7 +105,16 @@ class NewPrimaryContactUI extends StatelessWidget {
         ),
       ),
       body: isInitialLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Loading data...'),
+                ],
+              ),
+            )
           : Stack(
               children: [
                 SingleChildScrollView(
@@ -119,16 +128,24 @@ class NewPrimaryContactUI extends StatelessWidget {
                           // Error message if any
                           if (errorMessage != null)
                             Container(
-                              padding: const EdgeInsets.all(8),
+                              padding: const EdgeInsets.all(12),
                               margin: const EdgeInsets.only(bottom: 16),
                               decoration: BoxDecoration(
                                 color: Colors.red.shade100,
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(color: Colors.red),
                               ),
-                              child: Text(
-                                errorMessage!,
-                                style: TextStyle(color: Colors.red.shade900),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.error_outline, color: Colors.red.shade700),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      errorMessage!,
+                                      style: TextStyle(color: Colors.red.shade900),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           
@@ -139,10 +156,11 @@ class NewPrimaryContactUI extends StatelessWidget {
                                 child: TextFormField(
                                   controller: firstNameController,
                                   decoration: InputDecoration(
-                                    labelText: 'First Name',
+                                    labelText: 'First Name *',
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
+                                    prefixIcon: const Icon(Icons.person),
                                   ),
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
@@ -164,6 +182,7 @@ class NewPrimaryContactUI extends StatelessWidget {
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
+                                    prefixIcon: const Icon(Icons.person_outline),
                                   ),
                                   validator: (value) {
                                     if (value != null && value.length > 63) {
@@ -185,6 +204,7 @@ class NewPrimaryContactUI extends StatelessWidget {
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
+                              prefixIcon: const Icon(Icons.email),
                             ),
                             keyboardType: TextInputType.emailAddress,
                             validator: (value) {
@@ -213,17 +233,18 @@ class NewPrimaryContactUI extends StatelessWidget {
                                 child: TextFormField(
                                   controller: countryCodeController,
                                   decoration: InputDecoration(
-                                    labelText: 'Code',
+                                    labelText: 'Code *',
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
+                                    prefixIcon: const Icon(Icons.flag),
                                   ),
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
-                                      return 'Code';
+                                      return 'Required';
                                     }
                                     if(value.length > 5){
-                                      return 'Country code must be 5 characters or less';
+                                      return 'Max 5 chars';
                                     }
                                     return null;
                                   },
@@ -235,10 +256,11 @@ class NewPrimaryContactUI extends StatelessWidget {
                                 child: TextFormField(
                                   controller: phoneController,
                                   decoration: InputDecoration(
-                                    labelText: 'Phone Number',
+                                    labelText: 'Phone Number *',
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
+                                    prefixIcon: const Icon(Icons.phone),
                                   ),
                                   keyboardType: TextInputType.phone,
                                   validator: (value) {
@@ -265,7 +287,9 @@ class NewPrimaryContactUI extends StatelessWidget {
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
+                              prefixIcon: const Icon(Icons.location_on),
                             ),
+                            maxLines: 2,
                           ),
                           const SizedBox(height: 16),
 
@@ -273,10 +297,11 @@ class NewPrimaryContactUI extends StatelessWidget {
                           DropdownButtonFormField<int?>(
                             value: selectedConstituency,
                             decoration: InputDecoration(
-                              labelText: 'Constituency',
+                              labelText: 'Constituency *',
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
+                              prefixIcon: const Icon(Icons.location_city),
                             ),
                             items: constituencies.map((constituency) {
                               return DropdownMenuItem<int?>(
@@ -298,10 +323,11 @@ class NewPrimaryContactUI extends StatelessWidget {
                           DropdownButtonFormField<int?>(
                             value: selectedCity,
                             decoration: InputDecoration(
-                              labelText: 'City',
+                              labelText: 'City *',
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
+                              prefixIcon: const Icon(Icons.apartment),
                             ),
                             items: availableCities.map((city) {
                               return DropdownMenuItem<int?>(
@@ -328,10 +354,11 @@ class NewPrimaryContactUI extends StatelessWidget {
                           DropdownButtonFormField<int?>(
                             value: selectedConnection,
                             decoration: InputDecoration(
-                              labelText: 'Connection',
+                              labelText: 'Connection *',
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
+                              prefixIcon: const Icon(Icons.people),
                             ),
                             items: connections.map((connection) {
                               return DropdownMenuItem<int?>(
@@ -357,11 +384,26 @@ class NewPrimaryContactUI extends StatelessWidget {
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
+                              prefixIcon: const Icon(Icons.priority_high),
                             ),
                             items: priorityLevels.map((int priority) {
                               return DropdownMenuItem<int>(
                                 value: priority,
-                                child: Text(priority.toString()),
+                                child: Row(
+                                  children: [
+                                    Text(priority.toString()),
+                                    const SizedBox(width: 8),
+                                    Icon(
+                                      Icons.star,
+                                      color: priority <= 2 
+                                        ? Colors.red 
+                                        : priority <= 4 
+                                          ? Colors.orange 
+                                          : Colors.green,
+                                      size: 16,
+                                    ),
+                                  ],
+                                ),
                               );
                             }).toList(),
                             onChanged: onPriorityChanged,
@@ -376,6 +418,7 @@ class NewPrimaryContactUI extends StatelessWidget {
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
+                              prefixIcon: const Icon(Icons.note),
                             ),
                             maxLines: 3,
                           ),
@@ -383,26 +426,55 @@ class NewPrimaryContactUI extends StatelessWidget {
 
                           // Tags Section
                           buildTagsSection(context),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 24),
 
                           // Save Button
                           ElevatedButton(
                             onPressed: isLoading ? null : onSave,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: primaryColor,
+                              foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
+                              elevation: 2,
                             ),
                             child: isLoading 
-                              ? const CircularProgressIndicator(color: Colors.white)
-                              : const Text(
-                                  'Save Contact',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                              ? const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                    SizedBox(width: 12),
+                                    Text(
+                                      'Saving...',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.save, size: 20),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Save Contact',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                           ),
                         ],
@@ -410,11 +482,27 @@ class NewPrimaryContactUI extends StatelessWidget {
                     ),
                   ),
                 ),
+                // Loading overlay
                 if (isLoading)
                   Container(
                     color: Colors.black.withOpacity(0.3),
                     child: const Center(
-                      child: CircularProgressIndicator(),
+                      child: Card(
+                        child: Padding(
+                          padding: EdgeInsets.all(20),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CircularProgressIndicator(),
+                              SizedBox(height: 16),
+                              Text(
+                                'Saving contact...',
+                                style: TextStyle(fontSize: 16),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ),
               ],
@@ -423,102 +511,162 @@ class NewPrimaryContactUI extends StatelessWidget {
   }
 
   Widget buildTagsSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Title for the tags section
-        const Padding(
-          padding: EdgeInsets.only(bottom: 8.0),
-          child: Text(
-            'Add Tags',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        
-        // Tag Category Dropdown
-        DropdownButtonFormField<int?>(
-          value: selectedTagCategory,
-          decoration: InputDecoration(
-            labelText: 'Tag Category',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          items: tagCategories.map((category) {
-            return DropdownMenuItem<int?>(
-              value: category['id'],
-              child: Text(category['name']),
-            );
-          }).toList(),
-          onChanged: onTagCategoryChanged,
-        ),
-        const SizedBox(height: 12),
-        
-        // Tag Name Dropdown (only enabled if a category is selected)
-        Row(
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: DropdownButtonFormField<int?>(
-                value: selectedTagName,
-                decoration: InputDecoration(
-                  labelText: 'Tag Name',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                items: availableTagNames.map((tag) {
-                  return DropdownMenuItem<int?>(
-                    value: tag['id'],
-                    child: Text(tag['name']),
-                  );
-                }).toList(),
-                onChanged: availableTagNames.isEmpty ? null : onTagNameChanged,
-                hint: selectedTagCategory == null 
-                  ? const Text('Select category first') 
-                  : const Text('Select tag'),
-              ),
-            ),
-            IconButton(
-              icon: Icon(Icons.add, color: primaryColor),
-              onPressed: selectedTagName != null ? onAddTag : null,
-              tooltip: 'Add Tag',
-            ),
-          ],
-        ),
-        
-        // Display Added Tags
-        if (tags.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            // Title for the tags section
+            Row(
               children: [
+                Icon(Icons.label, color: primaryColor),
+                const SizedBox(width: 8),
                 const Text(
-                  'Selected Tags:',
+                  'Add Tags',
                   style: TextStyle(
-                    fontWeight: FontWeight.w500,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: tags.map((tag) {
-                    return Chip(
-                      label: Text('${tag['name']} (${tag['tag_category']})'),
-                      deleteIcon: const Icon(Icons.close, size: 18),
-                      onDeleted: () => onRemoveTag(tag),
-                      backgroundColor: Colors.blue.shade50,
-                    );
-                  }).toList(),
                 ),
               ],
             ),
-          ),
-      ],
+            const SizedBox(height: 16),
+            
+            // Tag Category Dropdown
+            DropdownButtonFormField<int?>(
+              value: selectedTagCategory,
+              decoration: InputDecoration(
+                labelText: 'Tag Category',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                prefixIcon: const Icon(Icons.category),
+              ),
+              items: tagCategories.map((category) {
+                return DropdownMenuItem<int?>(
+                  value: category['id'],
+                  child: Text(category['name']),
+                );
+              }).toList(),
+              onChanged: onTagCategoryChanged,
+            ),
+            const SizedBox(height: 12),
+            
+            // Tag Name Dropdown with Add button
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<int?>(
+                    value: selectedTagName,
+                    decoration: InputDecoration(
+                      labelText: 'Tag Name',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      prefixIcon: const Icon(Icons.local_offer),
+                    ),
+                    items: availableTagNames.map((tag) {
+                      return DropdownMenuItem<int?>(
+                        value: tag['id'],
+                        child: Text(tag['name']),
+                      );
+                    }).toList(),
+                    onChanged: availableTagNames.isEmpty ? null : onTagNameChanged,
+                    hint: selectedTagCategory == null 
+                      ? const Text('Select category first') 
+                      : const Text('Select tag'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    color: primaryColor,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.add, color: Colors.white),
+                    onPressed: selectedTagName != null ? onAddTag : null,
+                    tooltip: 'Add Tag',
+                  ),
+                ),
+              ],
+            ),
+            
+            // Display Added Tags
+            if (tags.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              const Divider(),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(Icons.label_outline, color: primaryColor, size: 20),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Selected Tags:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: tags.map((tag) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [primaryColor.withOpacity(0.1), primaryColor.withOpacity(0.05)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: primaryColor.withOpacity(0.3)),
+                    ),
+                    child: Chip(
+                      label: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            tag['name'],
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: primaryColor,
+                            ),
+                          ),
+                          Text(
+                            tag['tag_category'],
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: primaryColor.withOpacity(0.7),
+                            ),
+                          ),
+                        ],
+                      ),
+                      deleteIcon: Icon(
+                        Icons.close,
+                        size: 18,
+                        color: primaryColor,
+                      ),
+                      onDeleted: () => onRemoveTag(tag),
+                      backgroundColor: Colors.transparent,
+                      elevation: 0,
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

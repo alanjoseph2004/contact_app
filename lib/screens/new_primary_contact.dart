@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'new_primary_contact_ui.dart';
+import '../services/new_primary_contact_service.dart';
+
 
 class NewPrimaryContactPage extends StatefulWidget {
   const NewPrimaryContactPage({super.key});
@@ -13,6 +12,7 @@ class NewPrimaryContactPage extends StatefulWidget {
 
 class _NewPrimaryContactPageState extends State<NewPrimaryContactPage> {
   final Color primaryColor = const Color(0xFF283593);
+  final PrimaryContactService _contactService = PrimaryContactService();
   
   // Form key for validation
   final _formKey = GlobalKey<FormState>();
@@ -64,14 +64,26 @@ class _NewPrimaryContactPageState extends State<NewPrimaryContactPage> {
   Future<void> _loadInitialData() async {
     setState(() {
       _isInitialLoading = true;
+      _errorMessage = null;
     });
     
     try {
-      await Future.wait([
-        _fetchConnections(),
-        _fetchConstituencies(),
-        _fetchTagData(),
+      final results = await Future.wait([
+        _contactService.fetchConnections(),
+        _contactService.fetchConstituencies(),
+        _contactService.fetchTagData(),
       ]);
+
+      setState(() {
+        _connections = results[0];
+        _constituencies = results[1];
+        _tagCategories = results[2];
+        
+        // Set default connection if available
+        if (_connections.isNotEmpty) {
+          _selectedConnection = _connections.first['id'];
+        }
+      });
     } catch (e) {
       setState(() {
         _errorMessage = 'Failed to load initial data: ${e.toString()}';
@@ -80,74 +92,6 @@ class _NewPrimaryContactPageState extends State<NewPrimaryContactPage> {
       setState(() {
         _isInitialLoading = false;
       });
-    }
-  }
-
-  // API Call to fetch connections
-  Future<void> _fetchConnections() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? token = prefs.getString('jwt_token');
-
-    if (token == null || token.isEmpty) {
-      throw Exception("JWT token is missing");
-    }
-
-    final response = await http.get(
-      Uri.parse('http://51.21.152.136:8000/contact/all-connections/'),
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      setState(() {
-        _connections = data.map((item) => {
-          'id': item['id'],
-          'name': item['connection'],
-        }).toList();
-        
-        if (_connections.isNotEmpty) {
-          _selectedConnection = _connections.first['id'];
-        }
-      });
-    } else {
-      throw Exception('Failed to load connections');
-    }
-  }
-
-  // API Call to fetch constituencies with cities
-  Future<void> _fetchConstituencies() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? token = prefs.getString('jwt_token');
-
-    if (token == null || token.isEmpty) {
-      throw Exception("JWT token is missing");
-    }
-
-    final response = await http.get(
-      Uri.parse('http://51.21.152.136:8000/contact/all-cities/'),
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      setState(() {
-        _constituencies = data.map((item) => {
-          'id': item['id'],
-          'name': item['constituency'],
-          'cities': List<Map<String, dynamic>>.from(
-            item['cities'].map((city) => {
-              'id': city['id'],
-              'name': city['city'],
-            })
-          ),
-        }).toList();
-      });
-    } else {
-      throw Exception('Failed to load constituencies');
     }
   }
 
@@ -168,41 +112,6 @@ class _NewPrimaryContactPageState extends State<NewPrimaryContactPage> {
         _availableCities = [];
         _selectedCity = null;
       });
-    }
-  }
-
-  // API Call to fetch tag data (both categories and tags)
-  Future<void> _fetchTagData() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? token = prefs.getString('jwt_token');
-
-    if (token == null || token.isEmpty) {
-      throw Exception("JWT token is missing");
-    }
-
-    final response = await http.get(
-      Uri.parse('http://51.21.152.136:8000/contact/all-tags/'),
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      setState(() {
-        _tagCategories = data.map((category) => {
-          'id': category['id'],
-          'name': category['tag_category'],
-          'tags': List<Map<String, dynamic>>.from(
-            category['tags'].map((tag) => {
-              'id': tag['id'],
-              'name': tag['tag_name'],
-            })
-          ),
-        }).toList();
-      });
-    } else {
-      throw Exception('Failed to load tag data');
     }
   }
 
@@ -228,69 +137,52 @@ class _NewPrimaryContactPageState extends State<NewPrimaryContactPage> {
 
   Future<void> _saveContact() async {
     if (_formKey.currentState!.validate()) {
+      // Validate required fields
+      if (_selectedCity == null || _selectedConstituency == null || _selectedConnection == null) {
+        setState(() {
+          _errorMessage = 'Please fill all required fields';
+        });
+        return;
+      }
+
       setState(() {
         _isLoading = true;
         _errorMessage = null;
       });
 
       try {
-        final prefs = await SharedPreferences.getInstance();
-        final String? token = prefs.getString('jwt_token'); 
-
-        if (token == null || token.isEmpty) {
-          print("JWT token is missing");
-          return;
-        }
-        // Format the data according to the API schema
-        final Map<String, dynamic> requestBody = {
-          'contact': {
-            'first_name': _firstNameController.text,
-            'last_name': _lastNameController.text.isEmpty ? null : _lastNameController.text,
-            'email': _emailController.text.isEmpty ? null : _emailController.text,
-            'country_code': _countryCodeController.text,
-            'phone': _phoneController.text,
-            'note': _noteController.text.isEmpty ? null : _noteController.text,
-            'address': _addressController.text.isEmpty ? null : _addressController.text,
-            'city': _selectedCity,
-            'constituency': _selectedConstituency,
-          },
-          'priority': _selectedPriority,
-          'connection': _selectedConnection,
-          'tags': _tags.map((tag) => tag['id']).toList(),
-        };
-
-        // Make the API call
-        final response = await http.post(
-          Uri.parse('http://51.21.152.136:8000/contact/primary-contact/create/'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
-          body: jsonEncode(requestBody),
+        final success = await _contactService.createPrimaryContact(
+          firstName: _firstNameController.text,
+          lastName: _lastNameController.text.isEmpty ? null : _lastNameController.text,
+          email: _emailController.text.isEmpty ? null : _emailController.text,
+          countryCode: _countryCodeController.text,
+          phone: _phoneController.text,
+          note: _noteController.text.isEmpty ? null : _noteController.text,
+          address: _addressController.text.isEmpty ? null : _addressController.text,
+          cityId: _selectedCity!,
+          constituencyId: _selectedConstituency!,
+          priority: _selectedPriority,
+          connectionId: _selectedConnection!,
+          tagIds: _tags.map((tag) => tag['id'] as int).toList(),
         );
 
-        // Handle the response
-        if (response.statusCode == 200 || response.statusCode == 201) {
-          // Success
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Contact saved successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          
-          // Navigate back or to a success page
-          Navigator.of(context).pop();
-        } else {
-          // Error
-          final responseData = jsonDecode(response.body);
-          setState(() {
-            _errorMessage = responseData['message'] ?? 'Failed to save contact. Please try again.';
-          });
+        if (success) {
+          // Show success message
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Contact saved successfully!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            
+            // Navigate back
+            Navigator.of(context).pop();
+          }
         }
       } catch (e) {
         setState(() {
-          _errorMessage = 'An error occurred: ${e.toString()}';
+          _errorMessage = e.toString().replaceFirst('Exception: ', '');
         });
       } finally {
         setState(() {
