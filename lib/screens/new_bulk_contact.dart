@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import '../services/bulk_contact_service.dart';
+// Import your API service here
+// import 'contact_api_service.dart';
 
 class BulkContactsUploadPage extends StatefulWidget {
   const BulkContactsUploadPage({super.key});
@@ -29,6 +29,9 @@ class _BulkContactsUploadPageState extends State<BulkContactsUploadPage> {
 
   // List of contact forms
   final List<ContactFormData> _contactForms = [];
+  
+  // API service instance
+  final ContactApiService _apiService = ContactApiService();
 
   @override
   void initState() {
@@ -68,10 +71,14 @@ class _BulkContactsUploadPageState extends State<BulkContactsUploadPage> {
     });
     
     try {
-      await Future.wait([
-        _fetchPrimaryContacts(),
-        _fetchConstituencies(),
-      ]);
+      // Using API service instance instead of static calls
+      final primaryContacts = await _apiService.fetchPrimaryContacts();
+      final constituencies = await _apiService.fetchConstituencies();
+      
+      setState(() {
+        _primaryContacts = primaryContacts;
+        _constituencies = constituencies;
+      });
     } catch (e) {
       setState(() {
         _errorMessage = 'Failed to load initial data: ${e.toString()}';
@@ -83,88 +90,9 @@ class _BulkContactsUploadPageState extends State<BulkContactsUploadPage> {
     }
   }
 
-  // API Call to fetch primary contacts
-  Future<void> _fetchPrimaryContacts() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? token = prefs.getString('jwt_token');
-
-    if (token == null || token.isEmpty) {
-      throw Exception("JWT token is missing");
-    }
-
-    try {
-      final response = await http.get(
-        Uri.parse('http://51.21.152.136:8000/contact/all-primary-contacts/'),
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
-      );
-      
-      if (response.statusCode == 200) {
-        final dynamic responseData = jsonDecode(response.body);
-        final List<dynamic> data = responseData['results'];
-        setState(() {
-          _primaryContacts = data.map((item) => {
-            'id': item['id'],
-            'name': '${item['contact']['first_name']} ${item['contact']['last_name'] ?? ''}',
-            'phone': item['contact']['phone'],
-          }).toList();
-        });
-      } else {
-        throw Exception('Failed to load primary contacts. Status code: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Exception in _fetchPrimaryContacts: $e');
-      rethrow;
-    }
-  }
-
-  // API Call to fetch constituencies with cities
-  Future<void> _fetchConstituencies() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? token = prefs.getString('jwt_token');
-
-    if (token == null || token.isEmpty) {
-      throw Exception("JWT token is missing");
-    }
-
-    final response = await http.get(
-      Uri.parse('http://51.21.152.136:8000/contact/all-cities/'),
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      setState(() {
-        _constituencies = data.map((item) => {
-          'id': item['id'],
-          'name': item['constituency'],
-          'cities': List<Map<String, dynamic>>.from(
-            item['cities'].map((city) => {
-              'id': city['id'],
-              'name': city['city'],
-            })
-          ),
-        }).toList();
-      });
-    } else {
-      throw Exception('Failed to load constituencies');
-    }
-  }
-
   // Update available cities when constituency is selected
   List<Map<String, dynamic>> _getAvailableCities(int? constituencyId) {
-    if (constituencyId != null) {
-      final constituency = _constituencies.firstWhere(
-        (c) => c['id'] == constituencyId,
-        orElse: () => {'cities': []},
-      );
-      
-      return List<Map<String, dynamic>>.from(constituency['cities'] ?? []);
-    }
-    return [];
+    return _apiService.getAvailableCities(_constituencies, constituencyId);
   }
 
   Future<void> _saveBulkContacts() async {
@@ -175,13 +103,6 @@ class _BulkContactsUploadPageState extends State<BulkContactsUploadPage> {
       });
 
       try {
-        final prefs = await SharedPreferences.getInstance();
-        final String? token = prefs.getString('jwt_token');
-
-        if (token == null || token.isEmpty) {
-          throw Exception("JWT token is missing");
-        }
-        
         // Prepare the contacts data
         List<Map<String, dynamic>> contactsData = _contactForms.map((form) {
           return {
@@ -196,28 +117,17 @@ class _BulkContactsUploadPageState extends State<BulkContactsUploadPage> {
           };
         }).toList();
 
-        // Format the data according to the API schema
-        final Map<String, dynamic> requestBody = {
-          'referred_by': _selectedReferredBy,
-          'contacts': contactsData,
-        };
-
-        // Make the API call
-        final response = await http.post(
-          Uri.parse('http://51.21.152.136:8000/contact/contacts/bulk-create/'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
-          body: jsonEncode(requestBody),
+        // Use API service instance to save contacts
+        final result = await _apiService.saveBulkContacts(
+          referredBy: _selectedReferredBy!,
+          contacts: contactsData,
         );
 
-        // Handle the response
-        if (response.statusCode == 200 || response.statusCode == 201) {
+        if (result['success']) {
           // Success
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Contacts saved successfully!'),
+            SnackBar(
+              content: Text(result['message']),
               backgroundColor: Colors.green,
             ),
           );
@@ -226,9 +136,8 @@ class _BulkContactsUploadPageState extends State<BulkContactsUploadPage> {
           Navigator.of(context).pop();
         } else {
           // Error
-          final responseData = jsonDecode(response.body);
           setState(() {
-            _errorMessage = responseData['message'] ?? 'Failed to save contacts. Please try again.';
+            _errorMessage = result['message'];
           });
         }
       } catch (e) {
@@ -446,7 +355,6 @@ class ContactFormWidget extends StatefulWidget {
   State<ContactFormWidget> createState() => _ContactFormWidgetState();
 }
 
-// Fix the error in the ContactFormWidget class
 class _ContactFormWidgetState extends State<ContactFormWidget> {
   @override
   Widget build(BuildContext context) {
@@ -617,7 +525,7 @@ class _ContactFormWidgetState extends State<ContactFormWidget> {
             ),
             const SizedBox(height: 16),
 
-            // Constituency Dropdown - THIS IS THE FIXED PART
+            // Constituency Dropdown
             DropdownButtonFormField<int?>(
               value: widget.contactForm.selectedConstituency,
               decoration: InputDecoration(
@@ -648,7 +556,7 @@ class _ContactFormWidgetState extends State<ContactFormWidget> {
             ),
             const SizedBox(height: 16),
             
-            // City Dropdown - THIS IS THE FIXED PART
+            // City Dropdown
             DropdownButtonFormField<int?>(
               value: widget.contactForm.selectedCity,
               decoration: InputDecoration(
