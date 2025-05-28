@@ -18,7 +18,7 @@ class DetailedContactPage extends StatefulWidget {
 
 class _DetailedContactPageState extends State<DetailedContactPage> {
   late Contact _contact;
-  final Color primaryColor = const Color(0xFF283593);
+  final Color primaryColor = const Color(0xFF2196F3); // Blue color from screenshot
 
   @override
   void initState() {
@@ -29,170 +29,409 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF5F5F5), // Light gray background
       appBar: AppBar(
-        backgroundColor: primaryColor,
-        elevation: 0,
+        backgroundColor: Colors.white,
+        elevation: 1,
+        shadowColor: Colors.black12,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 24),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           _contact.name,
           style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+            fontSize: 18,
+            fontWeight: FontWeight.w500,
+            fontFamily: 'Inter',
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit, color: Colors.white),
-            onPressed: () => _navigateToEditContact(),
+          Container(
+            margin: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
+            child: Material(
+              color: primaryColor,
+              borderRadius: BorderRadius.circular(16),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () => _navigateToEditContact(),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.edit,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'Edit',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: 'Inter',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
       body: SingleChildScrollView(
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      // Merged profile header with quick actions
+      Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Profile header
-            Container(
-              color: primaryColor.withOpacity(0.1),
-              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-              child: Row(
-                children: [
-                  Hero(
-                    tag: 'contact_avatar_${_contact.id}',
-                    child: CircleAvatar(
-                      backgroundColor: primaryColor.withOpacity(0.3),
-                      backgroundImage: _contact.avatarUrl != null ? NetworkImage(_contact.avatarUrl!) : null,
-                      radius: 40,
-                      child: _contact.avatarUrl == null ? Text(
-                        _contact.name.isNotEmpty ? _contact.name[0].toUpperCase() : "?",
-                        style: TextStyle(color: primaryColor, fontSize: 28, fontWeight: FontWeight.bold),
-                      ) : null,
-                    ),
+            // Profile section
+            Row(
+              children: [
+                // Avatar
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    shape: BoxShape.circle,
                   ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _contact.name,
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
+                  child: _contact.avatarUrl != null 
+                      ? ClipOval(
+                          child: Image.network(
+                            _contact.avatarUrl!,
+                            fit: BoxFit.cover,
                           ),
+                        )
+                      : Icon(
+                          Icons.person,
+                          color: Colors.grey.shade600,
+                          size: 32,
                         ),
-                        const SizedBox(height: 4),
-                        _buildContactInfoRow(Icons.phone, _contact.phoneNumber),
-                        if (_contact.email != null && _contact.email!.isNotEmpty)
-                          _buildContactInfoRow(Icons.email, _contact.email!),
-                        if (_contact.isPrimary && _contact.priority != null)
-                          Container(
-                            margin: const EdgeInsets.only(top: 8),
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: _getPriorityColor(_contact.priority!),
-                              borderRadius: BorderRadius.circular(12),
+                ),
+                const SizedBox(width: 16),
+                // Contact info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _contact.name,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black,
+                          fontFamily: 'Inter',
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(Icons.phone, size: 16, color: Colors.grey.shade600),
+                          const SizedBox(width: 6),
+                          Text(
+                            _contact.phoneNumber,
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.grey.shade700,
+                              fontFamily: 'Inter',
                             ),
-                            child: Text(
-                              'Priority ${_contact.priority}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w500,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      if (_contact.email != null && _contact.email!.isNotEmpty)
+                        Row(
+                          children: [
+                            Icon(Icons.email, size: 16, color: Colors.grey.shade600),
+                            const SizedBox(width: 6),
+                            Text(
+                              _contact.email!,
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: Colors.grey.shade700,
+                                fontFamily: 'Inter',
                               ),
                             ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+                // Star icon with priority
+                if (_contact.isPrimary && _contact.priority != null)
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: primaryColor,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Icon(
+                          Icons.star,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        Positioned(
+                          child: Text(
+                            '${_contact.priority}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Inter',
+                            ),
                           ),
+                        ),
                       ],
                     ),
+                  )
+                else
+                  Icon(
+                    Icons.star,
+                    color: primaryColor,
+                    size: 28,
+                  ),
+              ],
+            ),
+            
+            const SizedBox(height: 14),
+            
+            // Divider
+            Container(
+              height: 1,
+              color: Colors.grey.shade200,
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // Quick action buttons
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildActionButton(Icons.phone, 'Call', () {
+                  // Implement call functionality
+                }, isOutlined: false),
+                _buildActionButton(Icons.message, 'Message', () {
+                  // Implement message functionality
+                }, isOutlined: true),
+                _buildActionButton(Icons.share, 'Share', () {
+                  // Implement share functionality
+                }, isOutlined: true),
+              ],
+            ),
+          ],
+        ),
+      ),
+
+      const SizedBox(height: 8),
+            // Contact Details Section
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
-            ),
-
-            // Quick action buttons
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildActionButton(Icons.phone, 'Call', () {
-                    // Implement call functionality
-                  }),
-                  _buildActionButton(Icons.message, 'Message', () {
-                    // Implement message functionality
-                  }),
-                  _buildActionButton(Icons.share, 'Share', () {
-                    // Implement share functionality
-                  }),
+                  const Text(
+                    'Contact Details',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                      fontFamily: 'Inter',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Address information
+                  if (_contact.address != null && _contact.address!.isNotEmpty)
+                    _buildDetailRow('Address', _contact.address!),
+                  
+                  // City information
+                  if (_contact.city != null && _contact.city!.isNotEmpty)
+                    _buildDetailRow('City', _contact.city!),
+                  
+                  // Constituency information
+                  if (_contact.constituency != null && _contact.constituency!.isNotEmpty)
+                    _buildDetailRow('Constituency', _contact.constituency!),
                 ],
               ),
             ),
 
-            const Divider(),
-
-            // Contact Details Section
-            _buildSectionTitle('Contact Details'),
-            
-            // Address information
-            if (_contact.address != null && _contact.address!.isNotEmpty)
-              _buildDetailItem('Address', _contact.address!),
-            
-            // City information
-            if (_contact.city != null && _contact.city!.isNotEmpty)
-              _buildDetailItem('City', _contact.city!),
-            
-            // Constituency information
-            if (_contact.constituency != null && _contact.constituency!.isNotEmpty)
-              _buildDetailItem('Constituency', _contact.constituency!),
-            
-            const Divider(),
+            const SizedBox(height: 8),
 
             // Additional Information
             if (_contact.type == ContactType.primary) ...[
-              _buildSectionTitle('Primary Contact Information'),
-              
-              // Connection information
-              if (_contact.connection != null && _contact.connection!.isNotEmpty)
-                _buildDetailItem('Connection', _contact.connection!),
-              
-              // Tags information
-              if (_contact.tags != null && _contact.tags!.isNotEmpty)
-                _buildTagsList('Tags', _contact.tags!),
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Primary Contact Information',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                        fontFamily: 'Inter',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Tags as chips
+                    if (_contact.tags != null && _contact.tags!.isNotEmpty)
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _contact.tags!.map((tag) => Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: primaryColor,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            tag,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              fontFamily: 'Inter',
+                            ),
+                          ),
+                        )).toList(),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
             ],
 
             // Referral Information (for All Contacts)
             if (_contact.type == ContactType.all && _contact.referredBy != null) ...[
-              _buildSectionTitle('Referral Information'),
-              _buildDetailItem('Referred By', 
-                '${_contact.referredBy!['referred_first_name']} ${_contact.referredBy!['referred_last_name'] ?? ''}'),
-              _buildDetailItem('Referral Phone', 
-                '${_contact.referredBy!['referred_country_code'] ?? ''} ${_contact.referredBy!['referred_phone'] ?? ''}'),
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Contact Details',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                        fontFamily: 'Inter',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildDetailRow('Referred by', 
+                      '${_contact.referredBy!['referred_first_name']} ${_contact.referredBy!['referred_last_name'] ?? ''}'),
+                    _buildDetailRow('Referral Phone', 
+                      '${_contact.referredBy!['referred_country_code'] ?? ''} ${_contact.referredBy!['referred_phone'] ?? ''}'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
             ],
 
-            const Divider(),
-
             // Notes Section
-            _buildSectionTitle('Notes'),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  _contact.note ?? 'No notes available.',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: _contact.note == null ? Colors.grey : Colors.black87,
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
                   ),
-                ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Notes',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                      fontFamily: 'Inter',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    _contact.note ?? 'No notes available.',
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: _contact.note == null ? Colors.grey.shade500 : Colors.black87,
+                      fontFamily: 'Inter',
+                    ),
+                  ),
+                ],
               ),
             ),
             
@@ -200,192 +439,95 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: primaryColor,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.phone),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: '',
-          ),
-        ],
-        currentIndex: 2,
-      ),
     );
   }
 
-  Widget _buildContactInfoRow(IconData icon, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 4),
-      child: Row(
-        children: [
-          Icon(icon, size: 16, color: Colors.grey.shade700),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey.shade800,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton(IconData icon, String label, VoidCallback onTap) {
+  Widget _buildActionButton(IconData icon, String label, VoidCallback onTap, {bool isOutlined = false}) {
     return InkWell(
       onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: primaryColor.withOpacity(0.1),
-              shape: BoxShape.circle,
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          color: isOutlined ? Colors.transparent : primaryColor,
+          borderRadius: BorderRadius.circular(24),
+          border: isOutlined ? Border.all(color: primaryColor, width: 1.5) : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon, 
+              color: isOutlined ? primaryColor : Colors.white, 
+              size: 18,
             ),
-            child: Icon(icon, color: primaryColor),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: primaryColor,
-              fontWeight: FontWeight.w500,
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: isOutlined ? primaryColor : Colors.white,
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+                fontFamily: 'Inter',
+              ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: primaryColor,
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildDetailItem(String label, String value) {
+  Widget _buildDetailRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 100,
+            width: 110,
             child: Text(
               label,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 15,
                 color: Colors.grey.shade600,
-                fontWeight: FontWeight.w500,
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w400,
               ),
             ),
           ),
-          const SizedBox(width: 16),
           Expanded(
             child: Text(
               value,
               style: const TextStyle(
-                fontSize: 16,
+                fontSize: 15,
+                color: Colors.black87,
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w400,
               ),
             ),
           ),
         ],
       ),
     );
-  }
-
-  Widget _buildTagsList(String label, List<String> tags) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey.shade600,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: tags.map((tag) => Chip(
-              backgroundColor: primaryColor.withOpacity(0.1),
-              label: Text(
-                tag,
-                style: TextStyle(color: primaryColor),
-              ),
-            )).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Color _getPriorityColor(int priority) {
-    switch (priority) {
-      case 1:
-        return Colors.red;
-      case 2:
-        return Colors.orange;
-      case 3:
-        return Colors.amber;
-      case 4:
-        return Colors.green;
-      case 5:
-        return Colors.blue;
-      default:
-        return Colors.grey;
-    }
   }
 
   void _navigateToEditContact() async {
-  final result = await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => _contact.type == ContactType.primary 
-          ? EditPrimaryContactScreen(contact: _contact)
-          : EditAllContactScreen(contact: _contact),
-    ),
-  );
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => _contact.type == ContactType.primary 
+            ? EditPrimaryContactScreen(contact: _contact)
+            : EditAllContactScreen(contact: _contact),
+      ),
+    );
 
-  // If contact was edited successfully, update the UI
-  if (result != null && result is Contact) {
-    setState(() {
-      _contact = result;
-    });
+    // If contact was edited successfully, update the UI
+    if (result != null && result is Contact) {
+      setState(() {
+        _contact = result;
+      });
+    }
   }
-}
 }
 
 // Create a separate EditContactScreen for full screen editing
@@ -401,16 +543,22 @@ class EditContactScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF283593),
-        title: const Text('Edit Contact', style: TextStyle(color: Colors.white)),
+        backgroundColor: const Color(0xFF2196F3),
+        title: const Text(
+          'Edit Contact',
+          style: TextStyle(
+            color: Colors.white,
+            fontFamily: 'Inter',
+          ),
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: EditContactDialog(
         contact: contact,
-        primaryColor: const Color(0xFF283593),
+        primaryColor: const Color(0xFF2196F3),
         isFullScreen: true,
       ),
     );
