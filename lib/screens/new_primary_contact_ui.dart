@@ -418,7 +418,7 @@ class NewPrimaryContactUI extends StatelessWidget {
                           const SizedBox(height: 32),
 
                           // Save Button
-                          Container(
+                          SizedBox(
                             width: double.infinity,
                             height: 50,
                             child: ElevatedButton(
