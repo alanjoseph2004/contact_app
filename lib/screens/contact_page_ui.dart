@@ -40,6 +40,57 @@ class _ContactsPageState extends State<ContactsPage> {
     );
   }
 
+  // Build individual contact list with proper structure
+  Widget _buildContactsList(List<String> sortedKeys, Map<String, List<Contact>> groupedContacts) {
+    if (_isLoading) {
+      return const Expanded(
+        child: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (sortedKeys.isEmpty) {
+      return const Expanded(
+        child: Center(
+          child: Text(
+            'No contacts found',
+            style: TextStyle(
+              fontSize: 16,
+              color: Color(0xFF757575),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Expanded(
+      child: ListView.builder(
+        itemCount: sortedKeys.length,
+        itemBuilder: (context, index) {
+          final key = sortedKeys[index];
+          final contacts = groupedContacts[key]!;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Text(
+                  key,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              ...contacts.map((contact) => _buildContactTile(contact)).toList(),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Get grouped contacts and sorted keys from logic
@@ -63,23 +114,25 @@ class _ContactsPageState extends State<ContactsPage> {
   // Build the app bar
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: _logic.primaryColor,
+      backgroundColor: const Color(0xFF2196F3), // Material Blue to match tabs
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-        onPressed: () {},
+        icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+        onPressed: () {
+          Navigator.of(context).pop();
+        },
       ),
       title: const Text(
         'Contacts',
         style: TextStyle(
           color: Colors.white,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
         ),
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.search, color: Colors.white),
+          icon: const Icon(Icons.search, color: Colors.white, size: 22),
           onPressed: () {
             // Navigate to search page
             // Navigator.push(context, MaterialPageRoute(builder: (context) => ContactSearchPage()));
@@ -93,10 +146,6 @@ class _ContactsPageState extends State<ContactsPage> {
   Widget _buildTabSelector() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8),
-      ),
       child: Row(
         children: [
           Expanded(
@@ -109,23 +158,28 @@ class _ContactsPageState extends State<ContactsPage> {
                 _loadContacts();
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 decoration: BoxDecoration(
-                  border: const Border(
-                    right: BorderSide(color: Colors.grey, width: 0.5),
-                  ),
-                  color: _selectedTab == ContactType.primary 
-                      ? _logic.primaryColor.withOpacity(0.1) 
-                      : Colors.transparent,
+                  border: _selectedTab == ContactType.primary
+                      ? const Border(
+                          bottom: BorderSide(
+                            color: Color(0xFF2196F3), // Blue color from screenshot
+                            width: 3,
+                          ),
+                        )
+                      : null,
                 ),
                 child: Center(
                   child: Text(
                     'Primary',
                     style: TextStyle(
-                      color: _selectedTab == ContactType.primary 
-                          ? _logic.primaryColor 
-                          : Colors.grey,
-                      fontWeight: FontWeight.w500,
+                      color: _selectedTab == ContactType.primary
+                          ? const Color(0xFF2196F3) // Blue for active tab
+                          : const Color(0xFF757575), // Medium grey for inactive
+                      fontWeight: _selectedTab == ContactType.primary
+                          ? FontWeight.w600
+                          : FontWeight.w500,
+                      fontSize: 15,
                     ),
                   ),
                 ),
@@ -142,18 +196,28 @@ class _ContactsPageState extends State<ContactsPage> {
                 _loadContacts();
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                color: _selectedTab == ContactType.all 
-                    ? _logic.primaryColor.withOpacity(0.1) 
-                    : Colors.transparent,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  border: _selectedTab == ContactType.all
+                      ? const Border(
+                          bottom: BorderSide(
+                            color: Color(0xFF2196F3), // Blue color from screenshot
+                            width: 3,
+                          ),
+                        )
+                      : null,
+                ),
                 child: Center(
                   child: Text(
                     'All Contacts',
                     style: TextStyle(
                       color: _selectedTab == ContactType.all
-                          ? _logic.primaryColor 
-                          : Colors.grey,
-                      fontWeight: FontWeight.w500,
+                          ? const Color(0xFF2196F3) // Blue for active tab
+                          : const Color(0xFF757575), // Medium grey for inactive
+                      fontWeight: _selectedTab == ContactType.all
+                          ? FontWeight.w600
+                          : FontWeight.w500,
+                      fontSize: 15,
                     ),
                   ),
                 ),
@@ -165,274 +229,188 @@ class _ContactsPageState extends State<ContactsPage> {
     );
   }
 
-  // Build the contacts list
-  Widget _buildContactsList(List<String> sortedKeys, Map<String, List<Contact>> groupedContacts) {
-    return Expanded(
-      child: _isLoading 
-          ? Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(_logic.primaryColor),
-              ),
-            )
-          : sortedKeys.isEmpty 
-              ? Center(
-                  child: Text(
-                    'No contacts in this category',
-                    style: TextStyle(color: _logic.primaryColor.withOpacity(0.7)),
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _loadContacts,
-                  color: _logic.primaryColor,
-                  child: ListView.builder(
-                    itemCount: sortedKeys.length,
-                    itemBuilder: (context, index) {
-                      final letter = sortedKeys[index];
-                      final contactsInGroup = groupedContacts[letter] ?? [];
-                      
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(left: 16, top: 16, bottom: 8),
-                            child: Text(
-                              letter,
-                              style: TextStyle(
-                                color: _logic.primaryColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                          ...contactsInGroup.map((contact) => _buildContactTile(contact)),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-    );
-  }
-
   // Build individual contact tile with responsive layout
   Widget _buildContactTile(Contact contact) {
-    return Dismissible(
-      key: Key(contact.id),
-      background: Container(
-        color: Colors.red,
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        child: const Icon(Icons.delete, color: Colors.white),
-      ),
-      direction: DismissDirection.endToStart,
-      confirmDismiss: (direction) async {
-        return await showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text("Delete Contact"),
-              content: Text("Are you sure you want to delete ${contact.name}?"),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text("CANCEL"),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text("DELETE"),
-                ),
-              ],
+    return Column(
+      children: [
+        Dismissible(
+          key: Key(contact.id),
+          background: Container(
+            color: Colors.red,
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 20),
+            child: const Icon(Icons.delete, color: Colors.white),
+          ),
+          direction: DismissDirection.endToStart,
+          confirmDismiss: (direction) async {
+            return await showDialog<bool>(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: const Text("Delete Contact"),
+                  content: Text("Are you sure you want to delete ${contact.name}?"),
+                  actions: <Widget>[
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text("CANCEL"),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      child: const Text("DELETE"),
+                    ),
+                  ],
+                );
+              },
             );
           },
-        );
-      },
-      onDismissed: (direction) {
-        // Handle contact deletion based on type
-        ContactService.deleteContact(contact.id);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("${contact.name} deleted"))
-        );
-        // Refresh the list
-        _loadContacts();
-      },
-      child: ListTile(
-        leading: Hero(
-          tag: 'contact_avatar_${contact.id}',
-          child: CircleAvatar(
-            backgroundColor: _logic.primaryColor.withOpacity(0.2),
-            backgroundImage: contact.avatarUrl != null ? NetworkImage(contact.avatarUrl!) : null,
-            radius: 24,
-            child: contact.avatarUrl == null ? Text(
-              contact.name.isNotEmpty ? contact.name[0].toUpperCase() : "?",
-              style: TextStyle(color: _logic.primaryColor),
-            ) : null,
-          ),
-        ),
-        title: Text(
-          contact.name,
-          style: const TextStyle(
-            fontWeight: FontWeight.w500,
-            fontSize: 16,
-          ),
-          overflow: TextOverflow.ellipsis,
-          maxLines: 1,
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Use Row with ConstrainedBox for the phone number 
-            Row(
-              children: [
-                // Phone number that takes available space with ellipsis
-                Expanded(
-                  child: Text(
-                    contact.phoneNumber,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
+          onDismissed: (direction) {
+            // Assuming ContactService is properly imported and available
+            ContactService.deleteContact(contact.id);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("${contact.name} deleted"))
+            );
+            _loadContacts();
+          },
+          child: InkWell(
+            onTap: () {
+              // Navigate to the detailed contact page
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DetailedContactPage(contact: contact),
                 ),
-                // Priority badge with spacing
-                if (_selectedTab == ContactType.primary && contact.priority != null)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: _logic.getPriorityColor(contact.priority!),
-                        borderRadius: BorderRadius.circular(10),
+              ).then((_) {
+                // Reload contacts when returning from the detailed contact page
+                _loadContacts();
+              });
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Row(
+                children: [
+                  // Avatar
+                  CircleAvatar(
+                    backgroundColor: const Color(0xFF2196F3).withOpacity(0.1),
+                    backgroundImage: contact.avatarUrl != null ? NetworkImage(contact.avatarUrl!) : null,
+                    radius: 24,
+                    child: contact.avatarUrl == null ? Text(
+                      contact.name.isNotEmpty ? contact.name[0].toUpperCase() : "?",
+                      style: const TextStyle(
+                        color: Color(0xFF2196F3),
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
                       ),
-                      child: Text(
-                        'Priority ${contact.priority}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
+                    ) : null,
+                  ),
+                  
+                  const SizedBox(width: 16),
+                  
+                  // Contact details
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          contact.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                            color: Color(0xFF212121),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          contact.phoneNumber,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF757575),
+                            fontWeight: FontWeight.w400,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                        if (_selectedTab == ContactType.all && contact.referredBy != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              'Referred by: ${contact.referredBy!['referred_first_name']} ${contact.referredBy!['referred_last_name'] ?? ''}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF9E9E9E),
+                                fontStyle: FontStyle.italic,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  
+                  // Action buttons
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(25),
+                          onTap: () {
+                            // Implement message functionality
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: const Color(0xFF2196F3), width: 1.5),
+                            ),
+                            child: const Icon(
+                              Icons.message,
+                              color: Color(0xFF2196F3),
+                              size: 20,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      
+                      const SizedBox(width: 12),
+                      
+                      Material(
+                        color: const Color(0xFF2196F3),
+                        borderRadius: BorderRadius.circular(25),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(25),
+                          onTap: () {
+                            // Implement call functionality
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            child: const Icon(
+                              Icons.phone,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-              ],
-            ),
-            if (_selectedTab == ContactType.all && contact.referredBy != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  'Referred by: ${contact.referredBy!['referred_first_name']} ${contact.referredBy!['referred_last_name'] ?? ''}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                    fontStyle: FontStyle.italic,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
-              ),
-          ],
-        ),
-        // Redesigned trailing widget with better responsiveness
-        trailing: LayoutBuilder(
-          builder: (context, constraints) {
-            // Determine if we have enough space for both buttons
-            final bool hasSpaceForBothButtons = constraints.maxWidth >= 70;
-            
-            if (hasSpaceForBothButtons) {
-              // If we have enough space, show both buttons in a row
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildActionButton(Icons.message, () {
-                    // Implement message functionality
-                  }),
-                  _buildActionButton(Icons.phone, () {
-                    // Implement call functionality
-                  }),
                 ],
-              );
-            } else {
-              // If space is limited, show a more menu button
-              return _buildActionButton(Icons.more_vert, () {
-                _showContactActions(context, contact);
-              });
-            }
-          },
-        ),
-        onTap: () {
-          // Navigate to the detailed contact page
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => DetailedContactPage(contact: contact),
+              ),
             ),
-          ).then((_) {
-            // Reload contacts when returning from the detailed contact page
-            _loadContacts();
-          });
-        },
-      ),
-    );
-  }
-  
-  // Helper method to build compact action buttons
-  Widget _buildActionButton(IconData icon, VoidCallback onPressed) {
-    return Material(
-      type: MaterialType.transparency,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: onPressed,
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Icon(
-            icon,
-            color: Colors.grey,
-            size: 20,
           ),
         ),
-      ),
-    );
-  }
-  
-  // Show contact actions in a bottom sheet on smaller screens
-  void _showContactActions(BuildContext context, Contact contact) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              ListTile(
-                leading: const Icon(Icons.message),
-                title: const Text('Message'),
-                onTap: () {
-                  Navigator.pop(context);
-                  // Implement message functionality
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.phone),
-                title: const Text('Call'),
-                onTap: () {
-                  Navigator.pop(context);
-                  // Implement call functionality
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.info_outline),
-                title: const Text('View Details'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => DetailedContactPage(contact: contact),
-                    ),
-                  ).then((_) {
-                    _loadContacts();
-                  });
-                },
-              ),
-            ],
+        // Divider line between contacts
+        Container(
+          margin: const EdgeInsets.only(left: 64),
+          height: 1,
+          decoration: const BoxDecoration(
+            color: Color(0xFFE0E0E0),
           ),
-        );
-      },
+        ),
+      ],
     );
   }
 
@@ -454,7 +432,7 @@ class _ContactsPageState extends State<ContactsPage> {
           _showContactCreationOptions();
         }
       },
-      backgroundColor: _logic.primaryColor,
+      backgroundColor: Color(0xFF2196F3),
       child: const Icon(Icons.person_add, color: Colors.white),
     );
   }
@@ -475,14 +453,14 @@ class _ContactsPageState extends State<ContactsPage> {
     );
 
     // Show the popup menu with transparent background
-    showMenu(
+    showMenu<String>(
       context: context,
       position: position,
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       color: Colors.transparent, // Transparent background
       items: [
-        PopupMenuItem(
+        PopupMenuItem<String>(
           padding: EdgeInsets.zero,
           value: 'single',
           child: Container(
@@ -502,7 +480,7 @@ class _ContactsPageState extends State<ContactsPage> {
               leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: _logic.primaryColor, // Use your blue theme color
+                  color: Color(0xFF2196F3), // Use your blue theme color
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.person, color: Colors.white, size: 20),
@@ -517,7 +495,7 @@ class _ContactsPageState extends State<ContactsPage> {
             ),
           ),
         ),
-        PopupMenuItem(
+        PopupMenuItem<String>(
           padding: EdgeInsets.zero,
           value: 'bulk',
           child: Container(
@@ -536,7 +514,7 @@ class _ContactsPageState extends State<ContactsPage> {
               leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: _logic.primaryColor, // Use your blue theme color
+                  color: Color(0xFF2196F3), // Use your blue theme color
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.people, color: Colors.white, size: 20),
@@ -571,50 +549,49 @@ class _ContactsPageState extends State<ContactsPage> {
     });
   }
 
-  // Build bottom navigation bar
   // Build a simplified bottom bar with only Contacts
-Widget _buildBottomNavigationBar() {
-  return Container(
-    decoration: BoxDecoration(
-      color: Colors.white,
-      boxShadow: [
-        BoxShadow(
-          color: Colors.grey.withOpacity(0.2),
-          spreadRadius: 0,
-          blurRadius: 10,
-        ),
-      ],
-    ),
-    // Using a simple Container instead of BottomNavigationBar
-    child: SafeArea(
-      child: Container(
-        height: 61, // Standard navigation bar height
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.contacts,
-                  color: _logic.primaryColor,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Contacts',
-                  style: TextStyle(
-                    color: _logic.primaryColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+  Widget _buildBottomNavigationBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            spreadRadius: 0,
+            blurRadius: 10,
+          ),
+        ],
+      ),
+      // Using a simple Container instead of BottomNavigationBar
+      child: SafeArea(
+        child: Container(
+          height: 61, // Standard navigation bar height
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.contacts,
+                    color: Color(0xFF2196F3),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  const SizedBox(height: 4),
+                  Text(
+                    'Contacts',
+                    style: TextStyle(
+                      color: Color(0xFF2196F3),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
