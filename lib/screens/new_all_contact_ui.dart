@@ -15,21 +15,43 @@ class NewAllContactUI extends StatelessWidget {
   final TextEditingController phoneController;
   final TextEditingController noteController;
   final TextEditingController addressController;
+  final TextEditingController houseNumberController;
+  final TextEditingController cityController;
+  final TextEditingController postOfficeController;
+  final TextEditingController pinCodeController;
   
   // Selected values
   final int? selectedReferredBy;
   final int? selectedCity;
   final int? selectedConstituency;
+  final int? selectedPartyBlock;
+  final int? selectedPartyConstituency;
+  final int? selectedBooth;
+  final int? selectedParliamentaryConstituency;
+  final int? selectedLocalBody;
+  final int? selectedWard;
+  final int selectedPriority;
+  final int? selectedTagCategory;
+  final int? selectedTagName;
   
   // Data lists
   final List<Map<String, dynamic>> primaryContacts;
   final List<Map<String, dynamic>> constituencies;
   final List<Map<String, dynamic>> availableCities;
+  final List<Map<String, dynamic>> tagCategories;
+  final List<Map<String, dynamic>> availableTagNames;
+  final List<int> priorityLevels;
+  final List<Map<String, dynamic>> tags;
   
   // Callbacks
   final Function(int?) onReferredByChanged;
   final Function(int?) onConstituencyChanged;
   final Function(int?) onCityChanged;
+  final Function(int?) onPriorityChanged;
+  final Function(int?) onTagCategoryChanged;
+  final Function(int?) onTagNameChanged;
+  final Function() onAddTag;
+  final Function(Map<String, dynamic>) onRemoveTag;
   final Function() onSave;
 
   const NewAllContactUI({
@@ -46,27 +68,49 @@ class NewAllContactUI extends StatelessWidget {
     required this.phoneController,
     required this.noteController,
     required this.addressController,
+    required this.houseNumberController,
+    required this.cityController,
+    required this.postOfficeController,
+    required this.pinCodeController,
     required this.selectedReferredBy,
     required this.selectedCity,
     required this.selectedConstituency,
+    required this.selectedPartyBlock,
+    required this.selectedPartyConstituency,
+    required this.selectedBooth,
+    required this.selectedParliamentaryConstituency,
+    required this.selectedLocalBody,
+    required this.selectedWard,
+    required this.selectedPriority,
+    required this.selectedTagCategory,
+    required this.selectedTagName,
     required this.primaryContacts,
     required this.constituencies,
     required this.availableCities,
+    required this.tagCategories,
+    required this.availableTagNames,
+    required this.priorityLevels,
+    required this.tags,
     required this.onReferredByChanged,
     required this.onConstituencyChanged,
     required this.onCityChanged,
+    required this.onPriorityChanged,
+    required this.onTagCategoryChanged,
+    required this.onTagNameChanged,
+    required this.onAddTag,
+    required this.onRemoveTag,
     required this.onSave,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        backgroundColor: primaryColor,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Colors.black, size: 24),
           onPressed: () {
             Navigator.of(context).pop();
           },
@@ -74,14 +118,23 @@ class NewAllContactUI extends StatelessWidget {
         title: const Text(
           'New Contact',
           style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+            color: Colors.black,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
       body: isInitialLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Loading data...'),
+                ],
+              ),
+            )
           : Stack(
               children: [
                 SingleChildScrollView(
@@ -95,28 +148,35 @@ class NewAllContactUI extends StatelessWidget {
                           // Error message if any
                           if (errorMessage != null)
                             Container(
-                              padding: const EdgeInsets.all(8),
+                              padding: const EdgeInsets.all(12),
                               margin: const EdgeInsets.only(bottom: 16),
                               decoration: BoxDecoration(
                                 color: Colors.red.shade100,
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: Colors.red),
                               ),
-                              child: Text(
-                                errorMessage!,
-                                style: TextStyle(color: Colors.red.shade900),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.error_outline, color: Colors.red.shade700),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      errorMessage!,
+                                      style: TextStyle(color: Colors.red.shade900),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           
+                          // Personal Details Section
+                          buildSectionTitle('Personal Details'),
+                          const SizedBox(height: 16),
+                          
                           // Referred By Dropdown
-                          DropdownButtonFormField<int?>(
+                          buildDropdownField<int?>(
                             value: selectedReferredBy,
-                            decoration: InputDecoration(
-                              labelText: 'Referred By',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
+                            labelText: 'Referred By*',
                             items: primaryContacts.map((contact) {
                               return DropdownMenuItem<int?>(
                                 value: contact['id'],
@@ -137,14 +197,9 @@ class NewAllContactUI extends StatelessWidget {
                           Row(
                             children: [
                               Expanded(
-                                child: TextFormField(
+                                child: buildTextField(
                                   controller: firstNameController,
-                                  decoration: InputDecoration(
-                                    labelText: 'First Name',
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
+                                  labelText: 'First Name*',
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
                                       return 'Please enter first name';
@@ -156,16 +211,11 @@ class NewAllContactUI extends StatelessWidget {
                                   },
                                 ),
                               ),
-                              const SizedBox(width: 10),
+                              const SizedBox(width: 12),
                               Expanded(
-                                child: TextFormField(
+                                child: buildTextField(
                                   controller: lastNameController,
-                                  decoration: InputDecoration(
-                                    labelText: 'Last Name',
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
+                                  labelText: 'Last Name',
                                   validator: (value) {
                                     if (value != null && value.length > 63) {
                                       return 'Last name must be 63 characters or less';
@@ -179,21 +229,14 @@ class NewAllContactUI extends StatelessWidget {
                           const SizedBox(height: 16),
 
                           // Email Field
-                          TextFormField(
+                          buildTextField(
                             controller: emailController,
-                            decoration: InputDecoration(
-                              labelText: 'Email',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
+                            labelText: 'Email',
                             keyboardType: TextInputType.emailAddress,
                             validator: (value) {
-                              // Allow null or empty email
                               if (value == null || value.isEmpty) {
                                 return null;
                               }
-                              // If email is provided, validate its format
                               final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
                               if (!emailRegex.hasMatch(value)) {
                                 return 'Please enter a valid email';
@@ -211,36 +254,26 @@ class NewAllContactUI extends StatelessWidget {
                             children: [
                               SizedBox(
                                 width: 80,
-                                child: TextFormField(
+                                child: buildTextField(
                                   controller: countryCodeController,
-                                  decoration: InputDecoration(
-                                    labelText: 'Code',
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
+                                  labelText: '+91',
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
-                                      return 'Code';
+                                      return 'Required';
                                     }
                                     if(value.length > 5){
-                                      return 'Country code must be 5 characters or less';
+                                      return 'Max 5 chars';
                                     }
                                     return null;
                                   },
                                   maxLength: 5,
                                 ),
                               ),
-                              const SizedBox(width: 10),
+                              const SizedBox(width: 12),
                               Expanded(
-                                child: TextFormField(
+                                child: buildTextField(
                                   controller: phoneController,
-                                  decoration: InputDecoration(
-                                    labelText: 'Phone Number',
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
+                                  labelText: 'Phone Number*',
                                   keyboardType: TextInputType.phone,
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
@@ -258,27 +291,22 @@ class NewAllContactUI extends StatelessWidget {
                           ),
                           const SizedBox(height: 16),
 
-                          // Address Field
-                          TextFormField(
-                            controller: addressController,
-                            decoration: InputDecoration(
-                              labelText: 'Address',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
+                          // Notes Field
+                          buildTextField(
+                            controller: noteController,
+                            labelText: 'Notes',
+                            maxLines: 3,
                           ),
+                          const SizedBox(height: 32),
+
+                          // Other Details Section
+                          buildSectionTitle('Other Details'),
                           const SizedBox(height: 16),
 
-                          // Constituency Dropdown
-                          DropdownButtonFormField<int?>(
+                          // District Dropdown
+                          buildDropdownField<int?>(
                             value: selectedConstituency,
-                            decoration: InputDecoration(
-                              labelText: 'Constituency',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
+                            labelText: 'District',
                             items: constituencies.map((constituency) {
                               return DropdownMenuItem<int?>(
                                 value: constituency['id'],
@@ -288,90 +316,406 @@ class NewAllContactUI extends StatelessWidget {
                             onChanged: onConstituencyChanged,
                             validator: (value) {
                               if (value == null) {
-                                return 'Please select a constituency';
+                                return 'Please select a district';
                               }
                               return null;
                             },
                           ),
                           const SizedBox(height: 16),
-                          
-                          // City Dropdown (filtered by constituency)
-                          DropdownButtonFormField<int?>(
+
+                          // Assembly Constituency
+                          buildDropdownField<int?>(
                             value: selectedCity,
-                            decoration: InputDecoration(
-                              labelText: 'City',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
+                            labelText: 'Assembly Constituency',
                             items: availableCities.map((city) {
                               return DropdownMenuItem<int?>(
                                 value: city['id'],
                                 child: Text(city['name']),
                               );
                             }).toList(),
-                            onChanged: availableCities.isEmpty 
-                              ? null 
-                              : onCityChanged,
+                            onChanged: availableCities.isEmpty ? (value) {} : onCityChanged,
                             validator: (value) {
                               if (value == null) {
-                                return 'Please select a city';
+                                return 'Please select a constituency';
                               }
                               return null;
                             },
-                            hint: availableCities.isEmpty
-                              ? const Text('Select constituency first')
-                              : const Text('Select city'),
                           ),
                           const SizedBox(height: 16),
 
-                          // Notes Field
-                          TextFormField(
-                            controller: noteController,
-                            decoration: InputDecoration(
-                              labelText: 'Notes',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            maxLines: 3,
+                          // Party Block
+                          buildDropdownField<int?>(
+                            value: selectedPartyBlock,
+                            labelText: 'Party Block',
+                            items: const [],
+                            onChanged: (value) {},
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 16),
+
+                          // Party Constituency
+                          buildDropdownField<int?>(
+                            value: selectedPartyConstituency,
+                            labelText: 'Party Constituency',
+                            items: const [],
+                            onChanged: (value) {},
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Booth
+                          buildDropdownField<int?>(
+                            value: selectedBooth,
+                            labelText: 'Booth',
+                            items: const [],
+                            onChanged: (value) {},
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Parliamentary Constituency
+                          buildDropdownField<int?>(
+                            value: selectedParliamentaryConstituency,
+                            labelText: 'Parliamentary Constituency',
+                            items: const [],
+                            onChanged: (value) {},
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Local Body
+                          buildDropdownField<int?>(
+                            value: selectedLocalBody,
+                            labelText: 'Local Body',
+                            items: const [],
+                            onChanged: (value) {},
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Ward
+                          buildDropdownField<int?>(
+                            value: selectedWard,
+                            labelText: 'Ward',
+                            items: const [],
+                            onChanged: (value) {},
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Priority
+                          buildDropdownField<int>(
+                            value: selectedPriority,
+                            labelText: 'Priority 5',
+                            items: priorityLevels.map((int priority) {
+                              return DropdownMenuItem<int>(
+                                value: priority,
+                                child: Text(priority.toString()),
+                              );
+                            }).toList(),
+                            onChanged: onPriorityChanged,
+                          ),
+                          const SizedBox(height: 32),
+
+                          // Residential Details Section
+                          buildSectionTitle('Residential Details'),
+                          const SizedBox(height: 16),
+
+                          // House Name
+                          buildTextField(
+                            controller: addressController,
+                            labelText: 'House Name',
+                          ),
+                          const SizedBox(height: 16),
+
+                          // House Number
+                          buildTextField(
+                            controller: houseNumberController,
+                            labelText: 'House Number',
+                          ),
+                          const SizedBox(height: 16),
+
+                          // City
+                          buildTextField(
+                            controller: cityController,
+                            labelText: 'City',
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Post Office
+                          buildTextField(
+                            controller: postOfficeController,
+                            labelText: 'Post Office',
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Pin Code
+                          buildTextField(
+                            controller: pinCodeController,
+                            labelText: 'Pin Code',
+                            keyboardType: TextInputType.number,
+                          ),
+                          const SizedBox(height: 32),
+
+                          // Tags Section
+                          buildSectionTitle('Add Tags'),
+                          const SizedBox(height: 16),
+                          buildTagsSection(context),
+                          const SizedBox(height: 32),
 
                           // Save Button
-                          ElevatedButton(
-                            onPressed: isLoading ? null : onSave,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryColor,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: isLoading 
-                              ? const CircularProgressIndicator(color: Colors.white)
-                              : const Text(
-                                  'Save Contact',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: isLoading ? null : onSave,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF4285F4),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(25),
                                 ),
+                                elevation: 0,
+                              ),
+                              child: isLoading 
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Save Contact',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                            ),
                           ),
+                          const SizedBox(height: 32),
                         ],
                       ),
                     ),
                   ),
                 ),
+                // Loading overlay
                 if (isLoading)
                   Container(
                     color: Colors.black.withOpacity(0.3),
                     child: const Center(
-                      child: CircularProgressIndicator(),
+                      child: Card(
+                        child: Padding(
+                          padding: EdgeInsets.all(20),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CircularProgressIndicator(),
+                              SizedBox(height: 16),
+                              Text(
+                                'Saving contact...',
+                                style: TextStyle(fontSize: 16),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ),
               ],
             ),
+    );
+  }
+
+  Widget buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: Colors.black87,
+      ),
+    );
+  }
+
+  Widget buildTextField({
+    required TextEditingController controller,
+    required String labelText,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+    int? maxLines,
+    int? maxLength,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      validator: validator,
+      maxLines: maxLines ?? 1,
+      maxLength: maxLength,
+      style: const TextStyle(
+        fontSize: 16,
+        color: Colors.black87,
+      ),
+      decoration: InputDecoration(
+        labelText: labelText,
+        labelStyle: const TextStyle(
+          fontSize: 14,
+          color: Colors.grey,
+          fontWeight: FontWeight.w400,
+        ),
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF4285F4), width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 1),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        counterText: '',
+      ),
+    );
+  }
+
+  Widget buildDropdownField<T>({
+    required T? value,
+    required String labelText,
+    required List<DropdownMenuItem<T>> items,
+    required Function(T?) onChanged,
+    String? Function(T?)? validator,
+  }) {
+    return DropdownButtonFormField<T>(
+      value: value,
+      validator: validator,
+      decoration: InputDecoration(
+        labelText: labelText,
+        labelStyle: const TextStyle(
+          fontSize: 14,
+          color: Colors.grey,
+          fontWeight: FontWeight.w400,
+        ),
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF4285F4), width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 1),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        suffixIcon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+      ),
+      style: const TextStyle(
+        fontSize: 16,
+        color: Colors.black87,
+      ),
+      items: items,
+      onChanged: onChanged,
+      dropdownColor: Colors.white,
+    );
+  }
+
+  Widget buildTagsSection(BuildContext context) {
+    return Column(
+      children: [
+        // Tag Category Dropdown
+        buildDropdownField<int?>(
+          value: selectedTagCategory,
+          labelText: 'Tag Category',
+          items: tagCategories.map((category) {
+            return DropdownMenuItem<int?>(
+              value: category['id'],
+              child: Text(category['name']),
+            );
+          }).toList(),
+          onChanged: onTagCategoryChanged,
+        ),
+        const SizedBox(height: 16),
+        
+        // Tag Name Dropdown with Add button
+        Row(
+          children: [
+            Expanded(
+              child: buildDropdownField<int?>(
+                value: selectedTagName,
+                labelText: 'Tag Name',
+                items: availableTagNames.map((tag) {
+                  return DropdownMenuItem<int?>(
+                    value: tag['id'],
+                    child: Text(tag['name']),
+                  );
+                }).toList(),
+                onChanged: availableTagNames.isEmpty ? (value) {} : onTagNameChanged,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              width: 50,
+              height: 50,
+              decoration: const BoxDecoration(
+                color: Color(0xFF4285F4),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.add, color: Colors.white, size: 24),
+                onPressed: selectedTagName != null ? onAddTag : null,
+              ),
+            ),
+          ],
+        ),
+        
+        // Display Added Tags
+        if (tags.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: tags.map((tag) {
+              return Chip(
+                label: Text(
+                  tag['name'],
+                  style: const TextStyle(
+                    color: Colors.black87,
+                    fontSize: 14,
+                  ),
+                ),
+                deleteIcon: const Icon(
+                  Icons.close,
+                  size: 18,
+                  color: Colors.grey,
+                ),
+                onDeleted: () => onRemoveTag(tag),
+                backgroundColor: const Color(0xFFF0F0F0),
+                side: const BorderSide(color: Color(0xFFE0E0E0)),
+              );
+            }).toList(),
+          ),
+        ],
+      ],
     );
   }
 }
