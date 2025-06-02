@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'contact_logic.dart';
-import 'edit_contact.dart';
+import 'edit_contact_primary.dart';
 import 'edit_all_contact.dart';
 import 'edit_primary_contact.dart';
 
