@@ -26,12 +26,17 @@ class _EditPrimaryContactScreenState extends State<EditPrimaryContactScreen> {
   late TextEditingController _phoneController;
   late TextEditingController _addressController;
   late TextEditingController _noteController;
+  late TextEditingController _houseNumberController;
+  late TextEditingController _cityController;
+  late TextEditingController _postOfficeController;
+  late TextEditingController _pinCodeController;
   
   // API data lists
   List<Map<String, dynamic>> _connections = [];
   List<Map<String, dynamic>> _constituencies = [];
   List<Map<String, dynamic>> _tagCategories = [];
   List<Map<String, dynamic>> _availableTagNames = [];
+  List<int> _priorityLevels = [1, 2, 3, 4, 5];
   
   // Selected values
   int? _selectedCity;
@@ -40,6 +45,12 @@ class _EditPrimaryContactScreenState extends State<EditPrimaryContactScreen> {
   int _selectedPriority = 5;
   int? _selectedTagCategory;
   int? _selectedTagName;
+  int? _selectedPartyBlock;
+  int? _selectedPartyConstituency;
+  int? _selectedBooth;
+  int? _selectedParliamentaryConstituency;
+  int? _selectedLocalBody;
+  int? _selectedWard;
   
   // Available cities based on selected constituency
   List<Map<String, dynamic>> _availableCities = [];
@@ -74,6 +85,10 @@ class _EditPrimaryContactScreenState extends State<EditPrimaryContactScreen> {
     _phoneController = TextEditingController(text: widget.contact.phone);
     _addressController = TextEditingController(text: widget.contact.address ?? '');
     _noteController = TextEditingController(text: widget.contact.note ?? '');
+    _houseNumberController = TextEditingController();
+    _cityController = TextEditingController();
+    _postOfficeController = TextEditingController();
+    _pinCodeController = TextEditingController();
   }
   
   void _disposeControllers() {
@@ -84,6 +99,10 @@ class _EditPrimaryContactScreenState extends State<EditPrimaryContactScreen> {
     _phoneController.dispose();
     _addressController.dispose();
     _noteController.dispose();
+    _houseNumberController.dispose();
+    _cityController.dispose();
+    _postOfficeController.dispose();
+    _pinCodeController.dispose();
   }
   
   void _setInitialValues() {
@@ -247,524 +266,642 @@ class _EditPrimaryContactScreenState extends State<EditPrimaryContactScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const Color primaryColor = Color(0xFF283593);
-    
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: _buildAppBar(primaryColor),
-      body: _buildBody(primaryColor),
-      bottomNavigationBar: _buildBottomNavigationBar(primaryColor),
-    );
-  }
-  
-  PreferredSizeWidget _buildAppBar(Color primaryColor) {
-    return AppBar(
-      backgroundColor: primaryColor,
-      elevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-        onPressed: () => Navigator.pop(context),
-      ),
-      title: const Text(
-        'Edit Primary Contact',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
+      backgroundColor: const Color(0xFFF8F9FA),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black, size: 24),
+          onPressed: () => Navigator.pop(context),
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: _isLoading ? null : _updateContact,
-          child: const Text(
-            'Save',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
+        title: const Text(
+          'Edit Primary Contact',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
           ),
         ),
-      ],
+      ),
+      body: _isInitialLoading
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Loading data...'),
+                ],
+              ),
+            )
+          : Stack(
+              children: [
+                SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Error message if any
+                          if (_errorMessage != null)
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              margin: const EdgeInsets.only(bottom: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade100,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.red),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.error_outline, color: Colors.red.shade700),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      _errorMessage!,
+                                      style: TextStyle(color: Colors.red.shade900),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          
+                          // Personal Details Section
+                          _buildSectionTitle('Personal Details'),
+                          const SizedBox(height: 16),
+                          
+                          // Name Fields
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildTextField(
+                                  controller: _firstNameController,
+                                  labelText: 'First Name*',
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Please enter first name';
+                                    }
+                                    if (value.length > 63) {
+                                      return 'First name must be 63 characters or less';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildTextField(
+                                  controller: _lastNameController,
+                                  labelText: 'Last Name',
+                                  validator: (value) {
+                                    if (value != null && value.length > 63) {
+                                      return 'Last name must be 63 characters or less';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Email Field
+                          _buildTextField(
+                            controller: _emailController,
+                            labelText: 'Email',
+                            keyboardType: TextInputType.emailAddress,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return null;
+                              }
+                              final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                              if (!emailRegex.hasMatch(value)) {
+                                return 'Please enter a valid email';
+                              }
+                              if (value.length > 255) {
+                                return 'Email must be 255 characters or less';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Phone Number Fields
+                          Row(
+                            children: [
+                              SizedBox(
+                                width: 80,
+                                child: _buildTextField(
+                                  controller: _countryCodeController,
+                                  labelText: '+91',
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Required';
+                                    }
+                                    if(value.length > 5){
+                                      return 'Max 5 chars';
+                                    }
+                                    return null;
+                                  },
+                                  maxLength: 5,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildTextField(
+                                  controller: _phoneController,
+                                  labelText: 'Phone Number*',
+                                  keyboardType: TextInputType.phone,
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Please enter phone number';
+                                    }
+                                    if(value.length > 11){
+                                      return 'Phone number must be 11 characters or less';
+                                    }
+                                    return null;
+                                  },
+                                  maxLength: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Notes Field
+                          _buildTextField(
+                            controller: _noteController,
+                            labelText: 'Notes',
+                            maxLines: 3,
+                          ),
+                          const SizedBox(height: 32),
+
+                          // Other Details Section
+                          _buildSectionTitle('Other Details'),
+                          const SizedBox(height: 16),
+
+                          // District Dropdown
+                          _buildDropdownField<int?>(
+                            value: _selectedConstituency,
+                            labelText: 'District',
+                            items: _constituencies.map((constituency) {
+                              return DropdownMenuItem<int?>(
+                                value: constituency['id'],
+                                child: Text(constituency['name']),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedConstituency = value;
+                                _updateAvailableCities();
+                              });
+                            },
+                            validator: (value) {
+                              if (value == null) {
+                                return 'Please select a district';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Assembly Constituency
+                          _buildDropdownField<int?>(
+                            value: _selectedCity,
+                            labelText: 'Assembly Constituency',
+                            items: _availableCities.map((city) {
+                              return DropdownMenuItem<int?>(
+                                value: city['id'],
+                                child: Text(city['name']),
+                              );
+                            }).toList(),
+                            onChanged: _availableCities.isEmpty ? (value) {} : (value) {
+                              setState(() {
+                                _selectedCity = value;
+                              });
+                            },
+                            validator: (value) {
+                              if (value == null) {
+                                return 'Please select a constituency';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Party Block
+                          _buildDropdownField<int?>(
+                            value: _selectedPartyBlock,
+                            labelText: 'Party Block',
+                            items: const [],
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedPartyBlock = value;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Party Constituency
+                          _buildDropdownField<int?>(
+                            value: _selectedPartyConstituency,
+                            labelText: 'Party Constituency',
+                            items: const [],
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedPartyConstituency = value;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Booth
+                          _buildDropdownField<int?>(
+                            value: _selectedBooth,
+                            labelText: 'Booth',
+                            items: const [],
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedBooth = value;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Parliamentary Constituency
+                          _buildDropdownField<int?>(
+                            value: _selectedParliamentaryConstituency,
+                            labelText: 'Parliamentary Constituency',
+                            items: const [],
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedParliamentaryConstituency = value;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Local Body
+                          _buildDropdownField<int?>(
+                            value: _selectedLocalBody,
+                            labelText: 'Local Body',
+                            items: const [],
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedLocalBody = value;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Ward
+                          _buildDropdownField<int?>(
+                            value: _selectedWard,
+                            labelText: 'Ward',
+                            items: const [],
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedWard = value;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Priority
+                          _buildDropdownField<int>(
+                            value: _selectedPriority,
+                            labelText: 'Priority 5',
+                            items: _priorityLevels.map((int priority) {
+                              return DropdownMenuItem<int>(
+                                value: priority,
+                                child: Text(priority.toString()),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedPriority = value ?? 5;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 32),
+
+                          // Residential Details Section
+                          _buildSectionTitle('Residential Details'),
+                          const SizedBox(height: 16),
+
+                          // House Name
+                          _buildTextField(
+                            controller: _addressController,
+                            labelText: 'House Name',
+                          ),
+                          const SizedBox(height: 16),
+
+                          // House Number
+                          _buildTextField(
+                            controller: _houseNumberController,
+                            labelText: 'House Number',
+                          ),
+                          const SizedBox(height: 16),
+
+                          // City
+                          _buildTextField(
+                            controller: _cityController,
+                            labelText: 'City',
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Post Office
+                          _buildTextField(
+                            controller: _postOfficeController,
+                            labelText: 'Post Office',
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Pin Code
+                          _buildTextField(
+                            controller: _pinCodeController,
+                            labelText: 'Pin Code',
+                            keyboardType: TextInputType.number,
+                          ),
+                          const SizedBox(height: 32),
+
+                          // Tags Section
+                          _buildSectionTitle('Add Tags'),
+                          const SizedBox(height: 16),
+                          _buildTagsSection(),
+                          const SizedBox(height: 32),
+
+                          // Save Button
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _updateContact,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF4285F4),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(25),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: _isLoading 
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Save Changes',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // Loading overlay
+                if (_isLoading)
+                  Container(
+                    color: Colors.black.withOpacity(0.3),
+                    child: const Center(
+                      child: Card(
+                        child: Padding(
+                          padding: EdgeInsets.all(20),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CircularProgressIndicator(),
+                              SizedBox(height: 16),
+                              Text(
+                                'Updating contact...',
+                                style: TextStyle(fontSize: 16),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
     );
   }
-  
-  Widget _buildBody(Color primaryColor) {
-    if (_isInitialLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (_errorMessage != null) _buildErrorMessage(),
-            _buildProfileHeader(primaryColor),
-            const SizedBox(height: 24),
-            _buildBasicInformationSection(),
-            const SizedBox(height: 24),
-            _buildAddressInformationSection(),
-            const SizedBox(height: 24),
-            _buildPrimaryContactDetailsSection(primaryColor),
-            const SizedBox(height: 24),
-            _buildTagsSection(primaryColor),
-            const SizedBox(height: 24),
-            _buildNotesSection(),
-            const SizedBox(height: 32),
-          ],
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: Colors.black87,
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String labelText,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+    int? maxLines,
+    int? maxLength,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      validator: validator,
+      maxLines: maxLines ?? 1,
+      maxLength: maxLength,
+      style: const TextStyle(
+        fontSize: 16,
+        color: Colors.black87,
+      ),
+      decoration: InputDecoration(
+        labelText: labelText,
+        labelStyle: const TextStyle(
+          fontSize: 14,
+          color: Colors.grey,
+          fontWeight: FontWeight.w400,
         ),
-      ),
-    );
-  }
-  
-  Widget _buildErrorMessage() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.red.shade100,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        _errorMessage!,
-        style: TextStyle(color: Colors.red.shade700),
-      ),
-    );
-  }
-  
-  Widget _buildProfileHeader(Color primaryColor) {
-    return Center(
-      child: Hero(
-        tag: 'contact_avatar_${widget.contact.id}',
-        child: CircleAvatar(
-          backgroundColor: primaryColor.withOpacity(0.3),
-          backgroundImage: widget.contact.avatarUrl != null ? NetworkImage(widget.contact.avatarUrl!) : null,
-          radius: 60,
-          child: widget.contact.avatarUrl == null ? Text(
-            widget.contact.firstName.isNotEmpty ? widget.contact.firstName[0].toUpperCase() : "?",
-            style: TextStyle(color: primaryColor, fontSize: 40, fontWeight: FontWeight.bold),
-          ) : null,
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
         ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF4285F4), width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 1),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        counterText: '',
       ),
     );
   }
-  
-  Widget _buildBasicInformationSection() {
+
+  Widget _buildDropdownField<T>({
+    required T? value,
+    required String labelText,
+    required List<DropdownMenuItem<T>> items,
+    required Function(T?) onChanged,
+    String? Function(T?)? validator,
+  }) {
+    return DropdownButtonFormField<T>(
+      value: value,
+      validator: validator,
+      decoration: InputDecoration(
+        labelText: labelText,
+        labelStyle: const TextStyle(
+          fontSize: 14,
+          color: Colors.grey,
+          fontWeight: FontWeight.w400,
+        ),
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF4285F4), width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 1),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        suffixIcon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+      ),
+      style: const TextStyle(
+        fontSize: 16,
+        color: Colors.black87,
+      ),
+      items: items,
+      onChanged: onChanged,
+      dropdownColor: Colors.white,
+    );
+  }
+
+  Widget _buildTagsSection() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Basic Information'),
-        TextFormField(
-          controller: _firstNameController,
-          decoration: _inputDecoration('First Name', Icons.person),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please enter first name';
-            }
-            return null;
-          },
-        ),
-        const SizedBox(height: 16),
-        TextFormField(
-          controller: _lastNameController,
-          decoration: _inputDecoration('Last Name', Icons.person),
-        ),
-        const SizedBox(height: 16),
-        TextFormField(
-          controller: _emailController,
-          decoration: _inputDecoration('Email', Icons.email),
-          keyboardType: TextInputType.emailAddress,
-          validator: (value) {
-            if (value != null && value.isNotEmpty) {
-              final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-              if (!emailRegex.hasMatch(value)) {
-                return 'Please enter a valid email';
-              }
-            }
-            return null;
-          },
-        ),
-        const SizedBox(height: 16),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: 100,
-              child: TextFormField(
-                controller: _countryCodeController,
-                decoration: _inputDecoration('Code', Icons.phone),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Required';
-                  }
-                  return null;
-                },
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: TextFormField(
-                controller: _phoneController,
-                decoration: _inputDecoration('Phone Number', null),
-                keyboardType: TextInputType.phone,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter phone number';
-                  }
-                  return null;
-                },
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-  
-  Widget _buildAddressInformationSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle('Address Information'),
-        TextFormField(
-          controller: _addressController,
-          decoration: _inputDecoration('Address', Icons.location_on),
-          maxLines: 2,
-        ),
-        const SizedBox(height: 16),
-        DropdownButtonFormField<int>(
-          value: _selectedConstituency,
-          decoration: _inputDecoration('Constituency', Icons.location_city),
-          hint: const Text('Select Constituency'),
-          isExpanded: true,
-          items: [
-            const DropdownMenuItem<int>(
-              value: null,
-              child: Text('Select Constituency'),
-            ),
-            ..._constituencies.map((constituency) => DropdownMenuItem<int>(
-              value: constituency['id'],
-              child: Text(
-                constituency['name'],
-                overflow: TextOverflow.ellipsis,
-              ),
-            )),
-          ],
+        // Tag Category Dropdown
+        _buildDropdownField<int?>(
+          value: _selectedTagCategory,
+          labelText: 'Tag Category',
+          items: _tagCategories.map((category) {
+            return DropdownMenuItem<int?>(
+              value: category['id'],
+              child: Text(category['name']),
+            );
+          }).toList(),
           onChanged: (value) {
             setState(() {
-              _selectedConstituency = value;
-              _updateAvailableCities();
+              _selectedTagCategory = value;
+              _updateAvailableTagNames();
             });
           },
         ),
         const SizedBox(height: 16),
-        DropdownButtonFormField<int>(
-          value: _selectedCity,
-          decoration: _inputDecoration('City', Icons.location_city),
-          hint: const Text('Select City'),
-          isExpanded: true,
-          items: [
-            const DropdownMenuItem<int>(
-              value: null,
-              child: Text('Select City'),
-            ),
-            ..._availableCities.map((city) => DropdownMenuItem<int>(
-              value: city['id'],
-              child: Text(
-                city['name'],
-                overflow: TextOverflow.ellipsis,
-              ),
-            )),
-          ],
-          onChanged: (value) {
-            setState(() {
-              _selectedCity = value;
-            });
-          },
-        ),
-      ],
-    );
-  }
-  
-  Widget _buildPrimaryContactDetailsSection(Color primaryColor) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle('Primary Contact Details'),
+        
+        // Tag Name Dropdown with Add button
         Row(
           children: [
-            const Text(
-              'Priority:',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(width: 16),
             Expanded(
-              child: Slider(
-                value: _selectedPriority.toDouble(),
-                min: 1,
-                max: 5,
-                divisions: 4,
-                activeColor: _getPriorityColor(_selectedPriority),
-                label: _selectedPriority.toString(),
-                onChanged: (value) {
+              child: _buildDropdownField<int?>(
+                value: _selectedTagName,
+                labelText: 'Tag Name',
+                items: _availableTagNames.map((tag) {
+                  return DropdownMenuItem<int?>(
+                    value: tag['id'],
+                    child: Text(tag['name']),
+                  );
+                }).toList(),
+                onChanged: _availableTagNames.isEmpty ? (value) {} : (value) {
                   setState(() {
-                    _selectedPriority = value.toInt();
+                    _selectedTagName = value;
                   });
                 },
               ),
             ),
+            const SizedBox(width: 12),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: _getPriorityColor(_selectedPriority),
-                borderRadius: BorderRadius.circular(12),
+              width: 50,
+              height: 50,
+              decoration: const BoxDecoration(
+                color: Color(0xFF4285F4),
+                shape: BoxShape.circle,
               ),
-              child: Text(
-                _selectedPriority.toString(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+              child: IconButton(
+                icon: const Icon(Icons.add, color: Colors.white, size: 24),
+                onPressed: _selectedTagName != null ? _addTag : null,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 16),
-        DropdownButtonFormField<int>(
-          value: _selectedConnection,
-          decoration: _inputDecoration('Connection', Icons.people),
-          hint: const Text('Select Connection'),
-          isExpanded: true,
-          items: [
-            const DropdownMenuItem<int>(
-              value: null,
-              child: Text('Select Connection'),
-            ),
-            ..._connections.map((connection) => DropdownMenuItem<int>(
-              value: connection['id'],
-              child: Text(
-                connection['name'],
-                overflow: TextOverflow.ellipsis,
-              ),
-            )),
-          ],
-          onChanged: (value) {
-            setState(() {
-              _selectedConnection = value;
-            });
-          },
-        ),
-      ],
-    );
-  }
-  
-  Widget _buildTagsSection(Color primaryColor) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle('Tags'),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            DropdownButtonFormField<int>(
-              value: _selectedTagCategory,
-              decoration: _inputDecoration('Tag Category', Icons.category),
-              hint: const Text('Select Category'),
-              isExpanded: true,
-              items: [
-                const DropdownMenuItem<int>(
-                  value: null,
-                  child: Text('Select Category'),
-                ),
-                ..._tagCategories.map((category) => DropdownMenuItem<int>(
-                  value: category['id'],
-                  child: Text(
-                    category['name'],
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                )),
-              ],
-              onChanged: (value) {
-                setState(() {
-                  _selectedTagCategory = value;
-                  _updateAvailableTagNames();
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<int>(
-                    value: _selectedTagName,
-                    decoration: _inputDecoration('Tag Name', Icons.label),
-                    hint: const Text('Select Tag'),
-                    isExpanded: true,
-                    items: [
-                      const DropdownMenuItem<int>(
-                        value: null,
-                        child: Text('Select Tag'),
-                      ),
-                      ..._availableTagNames.map((tag) => DropdownMenuItem<int>(
-                        value: tag['id'],
-                        child: Text(
-                          tag['name'],
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      )),
-                    ],
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedTagName = value;
-                      });
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: _selectedTagName != null ? _addTag : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    padding: const EdgeInsets.all(12),
-                    shape: const CircleBorder(),
-                  ),
-                  child: const Icon(Icons.add, color: Colors.white),
-                ),
-              ],
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        if (_tags.isNotEmpty)
+        
+        // Display Added Tags
+        if (_tags.isNotEmpty) ...[
+          const SizedBox(height: 20),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: _tags.map((tag) {
               return Chip(
-                label: Text(tag['name']),
-                deleteIcon: const Icon(Icons.close, size: 18),
+                label: Text(
+                  tag['name'],
+                  style: const TextStyle(
+                    color: Colors.black87,
+                    fontSize: 14,
+                  ),
+                ),
+                deleteIcon: const Icon(
+                  Icons.close,
+                  size: 18,
+                  color: Colors.grey,
+                ),
                 onDeleted: () => _removeTag(tag),
-                backgroundColor: primaryColor.withOpacity(0.1),
-                deleteIconColor: primaryColor,
-                labelStyle: TextStyle(color: primaryColor),
+                backgroundColor: const Color(0xFFF0F0F0),
+                side: const BorderSide(color: Color(0xFFE0E0E0)),
               );
             }).toList(),
           ),
-      ],
-    );
-  }
-  
-  Widget _buildNotesSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle('Notes'),
-        TextFormField(
-          controller: _noteController,
-          decoration: _inputDecoration('Notes', Icons.note),
-          maxLines: 4,
-        ),
-      ],
-    );
-  }
-  
-  Widget _buildBottomNavigationBar(Color primaryColor) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, -2),
-          ),
         ],
-      ),
-      child: SafeArea(
-        child: SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : _updateContact,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: _isLoading
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  )
-                : const Text(
-                    'Save Changes',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-          ),
-        ),
-      ),
+      ],
     );
-  }
-  
-  InputDecoration _inputDecoration(String label, IconData? icon) {
-    return InputDecoration(
-      labelText: label,
-      prefixIcon: icon != null ? Icon(icon) : null,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: Color(0xFF283593), width: 2),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-    );
-  }
-  
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: Color(0xFF283593),
-        ),
-      ),
-    );
-  }
-  
-  Color _getPriorityColor(int priority) {
-    switch (priority) {
-      case 1:
-        return Colors.red;
-      case 2:
-        return Colors.orange;
-      case 3:
-        return Colors.amber;
-      case 4:
-        return Colors.green;
-      case 5:
-        return Colors.blue;
-      default:
-        return Colors.grey;
-    }
   }
 }
