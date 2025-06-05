@@ -114,7 +114,7 @@ class _ContactsPageState extends State<ContactsPage> {
   // Build the app bar
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: const Color(0xFF2196F3), // Material Blue to match tabs
+      backgroundColor: const Color.fromARGB(218, 3, 108, 194), // Material Blue to match tabs
       elevation: 0,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
