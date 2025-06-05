@@ -1,8 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'contact_logic.dart';
+import '../services/edit_all_contact_service.dart';
 
 class EditAllContactScreen extends StatefulWidget {
   final Contact contact;
@@ -18,6 +16,8 @@ class EditAllContactScreen extends StatefulWidget {
 
 class _EditAllContactScreenState extends State<EditAllContactScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _service = EditAllContactService();
+  
   late TextEditingController _firstNameController;
   late TextEditingController _lastNameController;
   late TextEditingController _emailController;
@@ -96,7 +96,7 @@ class _EditAllContactScreenState extends State<EditAllContactScreen> {
     super.dispose();
   }
   
-  // Load all necessary data from APIs
+  // Load all necessary data from APIs using the service
   Future<void> _loadInitialData() async {
     setState(() {
       _isInitialLoading = true;
@@ -104,10 +104,12 @@ class _EditAllContactScreenState extends State<EditAllContactScreen> {
     });
     
     try {
-      await Future.wait([
-        _fetchPrimaryContacts(),
-        _fetchConstituencies(),
-      ]);
+      final data = await _service.loadInitialData();
+      
+      setState(() {
+        _primaryContacts = data['primaryContacts'];
+        _constituencies = data['constituencies'];
+      });
       
       // After loading constituencies, update available cities
       if (_selectedConstituency != null) {
@@ -121,77 +123,6 @@ class _EditAllContactScreenState extends State<EditAllContactScreen> {
       setState(() {
         _isInitialLoading = false;
       });
-    }
-  }
-
-  // API Call to fetch primary contacts
-  Future<void> _fetchPrimaryContacts() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? token = prefs.getString('jwt_token');
-
-    if (token == null || token.isEmpty) {
-      throw Exception("JWT token is missing");
-    }
-
-    try {
-      final response = await http.get(
-        Uri.parse('http://51.21.152.136:8000/contact/all-primary-contacts/'),
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
-      );
-      
-      if (response.statusCode == 200) {
-        final dynamic responseData = jsonDecode(response.body);
-        final List<dynamic> data = responseData['results'];
-        setState(() {
-          _primaryContacts = data.map((item) => {
-            'id': item['id'],
-            'name': '${item['contact']['first_name']} ${item['contact']['last_name'] ?? ''}',
-            'phone': item['contact']['phone'],
-          }).toList();
-        });
-      } else {
-        throw Exception('Failed to load primary contacts. Status code: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Exception in _fetchPrimaryContacts: $e');
-      rethrow;
-    }
-  }
-
-  // API Call to fetch constituencies with cities
-  Future<void> _fetchConstituencies() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? token = prefs.getString('jwt_token');
-
-    if (token == null || token.isEmpty) {
-      throw Exception("JWT token is missing");
-    }
-
-    final response = await http.get(
-      Uri.parse('http://51.21.152.136:8000/contact/all-cities/'),
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      setState(() {
-        _constituencies = data.map((item) => {
-          'id': item['id'],
-          'name': item['constituency'],
-          'cities': List<Map<String, dynamic>>.from(
-            item['cities'].map((city) => {
-              'id': city['id'],
-              'name': city['city'],
-            })
-          ),
-        }).toList();
-      });
-    } else {
-      throw Exception('Failed to load constituencies');
     }
   }
 
@@ -225,15 +156,8 @@ class _EditAllContactScreenState extends State<EditAllContactScreen> {
     });
     
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final String? token = prefs.getString('jwt_token');
-
-      if (token == null || token.isEmpty) {
-        throw Exception("JWT token is missing");
-      }
-      
       // Format the data according to the API schema
-      final Map<String, dynamic> requestBody = {
+      final Map<String, dynamic> contactData = {
         'referred_by': _selectedReferredBy,
         'first_name': _firstNameController.text,
         'last_name': _lastNameController.text.isEmpty ? null : _lastNameController.text,
@@ -245,68 +169,22 @@ class _EditAllContactScreenState extends State<EditAllContactScreen> {
         'city': _selectedCity,
       };
       
-      final response = await http.put(
-        Uri.parse('http://51.21.152.136:8000/contact/contact/update/${widget.contact.id}/'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(requestBody),
+      // Use the service to update the contact
+      final updatedContact = await _service.updateContact(
+        contactId: widget.contact.id,
+        contactData: contactData,
+        primaryContacts: _primaryContacts,
+        originalContact: widget.contact,
       );
       
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        
-        // Create updated contact object based on the Contact class definition
-        final updatedContact = Contact(
-          id: responseData['id'].toString(),
-          firstName: responseData['first_name'],
-          lastName: responseData['last_name'],
-          countryCode: responseData['country_code'],
-          phone: responseData['phone'],
-          email: responseData['email'],
-          note: responseData['note'],
-          address: responseData['address'],
-          city: responseData['city']?.toString(),
-          constituency: responseData['constituency']?.toString(),
-          avatarUrl: widget.contact.avatarUrl, // Keep existing avatar
-          hasMessages: widget.contact.hasMessages, // Maintain existing value
-          type: responseData['is_primary_contact'] == true ? ContactType.primary : ContactType.all,
-          priority: null, // Only set for primary contacts via a different endpoint
-          connection: null, // Only set for primary contacts via a different endpoint
-          tags: null, // Only set for primary contacts via a different endpoint
-          isPrimary: responseData['is_primary_contact'] == true,
-          referredBy: responseData['referred_by'] != null ? {
-            'id': responseData['referred_by'],
-            // We would need to fetch additional details from the primary contacts list
-            'name': _primaryContacts.firstWhere(
-              (contact) => contact['id'] == responseData['referred_by'], 
-              orElse: () => {'name': 'Unknown'}
-            )['name'],
-          } : null,
-        );
-        
-        // Show success message
-        _showSnackBar('Contact updated successfully!', Colors.green);
-        
-        // Return to previous screen with updated contact
-        Navigator.pop(context, updatedContact);
-      } else {
-        setState(() {
-          _errorMessage = 'Failed to update contact. Status code: ${response.statusCode}';
-          try {
-            final responseData = jsonDecode(response.body);
-            if (responseData['message'] != null) {
-              _errorMessage = responseData['message'];
-            }
-          } catch (e) {
-            // If response body can't be parsed, use the existing error message
-          }
-        });
-      }
+      // Show success message
+      _showSnackBar('Contact updated successfully!', Colors.green);
+      
+      // Return to previous screen with updated contact
+      Navigator.pop(context, updatedContact);
     } catch (e) {
       setState(() {
-        _errorMessage = 'Error: ${e.toString()}';
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
       });
     } finally {
       setState(() {
