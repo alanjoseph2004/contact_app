@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../widgets/add_tags_widget.dart'; // Import the new AddTagsWidget
+import '../widgets/add_tags_widget.dart';
+import '../widgets/personal_details_widget.dart'; // Import the new PersonalDetailsWidget
+import '../utils/form_utils.dart'; // Import form utilities
 
 class NewPrimaryContactUI extends StatelessWidget {
   final GlobalKey<FormState> formKey;
@@ -126,146 +128,29 @@ class NewPrimaryContactUI extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // Error message if any
-                          if (errorMessage != null)
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              margin: const EdgeInsets.only(bottom: 16),
-                              decoration: BoxDecoration(
-                                color: Colors.red.shade100,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.red),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.error_outline, color: Colors.red.shade700),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      errorMessage!,
-                                      style: TextStyle(color: Colors.red.shade900),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                          // Error message using FormUtils
+                          FormUtils.buildErrorMessage(errorMessage),
                           
-                          // Personal Details Section
-                          buildSectionTitle('Personal Details'),
-                          const SizedBox(height: 16),
-                          
-                          // Name Fields
-                          Row(
-                            children: [
-                              Expanded(
-                                child: buildTextField(
-                                  controller: firstNameController,
-                                  labelText: 'First Name*',
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Please enter first name';
-                                    }
-                                    if (value.length > 63) {
-                                      return 'First name must be 63 characters or less';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: buildTextField(
-                                  controller: lastNameController,
-                                  labelText: 'Last Name',
-                                  validator: (value) {
-                                    if (value != null && value.length > 63) {
-                                      return 'Last name must be 63 characters or less';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Email Field
-                          buildTextField(
-                            controller: emailController,
-                            labelText: 'Email',
-                            keyboardType: TextInputType.emailAddress,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return null;
-                              }
-                              final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                              if (!emailRegex.hasMatch(value)) {
-                                return 'Please enter a valid email';
-                              }
-                              if (value.length > 255) {
-                                return 'Email must be 255 characters or less';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Phone Number Fields
-                          Row(
-                            children: [
-                              SizedBox(
-                                width: 80,
-                                child: buildTextField(
-                                  controller: countryCodeController,
-                                  labelText: '+91',
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Required';
-                                    }
-                                    if(value.length > 5){
-                                      return 'Max 5 chars';
-                                    }
-                                    return null;
-                                  },
-                                  maxLength: 5,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: buildTextField(
-                                  controller: phoneController,
-                                  labelText: 'Phone Number*',
-                                  keyboardType: TextInputType.phone,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Please enter phone number';
-                                    }
-                                    if(value.length > 11){
-                                      return 'Phone number must be 11 characters or less';
-                                    }
-                                    return null;
-                                  },
-                                  maxLength: 11,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Notes Field
-                          buildTextField(
-                            controller: noteController,
-                            labelText: 'Notes',
-                            maxLines: 3,
+                          // Personal Details Section - Now using PersonalDetailsWidget
+                          PersonalDetailsWidget(
+                            firstNameController: firstNameController,
+                            lastNameController: lastNameController,
+                            emailController: emailController,
+                            countryCodeController: countryCodeController,
+                            phoneController: phoneController,
+                            noteController: noteController,
+                            showNotes: true,
+                            showSectionTitle: true,
+                            sectionTitle: 'Personal Details',
                           ),
                           const SizedBox(height: 32),
 
                           // Other Details Section
-                          buildSectionTitle('Other Details'),
+                          FormUtils.buildSectionTitle('Other Details'),
                           const SizedBox(height: 16),
 
                           // District Dropdown
-                          buildDropdownField<int?>(
+                          FormUtils.buildDropdownField<int?>(
                             value: selectedConstituency,
                             labelText: 'District',
                             items: constituencies.map((constituency) {
@@ -285,7 +170,7 @@ class NewPrimaryContactUI extends StatelessWidget {
                           const SizedBox(height: 16),
 
                           // Assembly Constituency
-                          buildDropdownField<int?>(
+                          FormUtils.buildDropdownField<int?>(
                             value: selectedCity,
                             labelText: 'Assembly Constituency',
                             items: availableCities.map((city) {
@@ -305,7 +190,7 @@ class NewPrimaryContactUI extends StatelessWidget {
                           const SizedBox(height: 16),
 
                           // Party Block
-                          buildDropdownField<int?>(
+                          FormUtils.buildDropdownField<int?>(
                             value: null,
                             labelText: 'Party Block',
                             items: const [],
@@ -314,7 +199,7 @@ class NewPrimaryContactUI extends StatelessWidget {
                           const SizedBox(height: 16),
 
                           // Party Constituency
-                          buildDropdownField<int?>(
+                          FormUtils.buildDropdownField<int?>(
                             value: null,
                             labelText: 'Party Constituency',
                             items: const [],
@@ -323,7 +208,7 @@ class NewPrimaryContactUI extends StatelessWidget {
                           const SizedBox(height: 16),
 
                           // Booth
-                          buildDropdownField<int?>(
+                          FormUtils.buildDropdownField<int?>(
                             value: null,
                             labelText: 'Booth',
                             items: const [],
@@ -332,7 +217,7 @@ class NewPrimaryContactUI extends StatelessWidget {
                           const SizedBox(height: 16),
 
                           // Parliamentary Constituency
-                          buildDropdownField<int?>(
+                          FormUtils.buildDropdownField<int?>(
                             value: null,
                             labelText: 'Parliamentary Constituency',
                             items: const [],
@@ -341,7 +226,7 @@ class NewPrimaryContactUI extends StatelessWidget {
                           const SizedBox(height: 16),
 
                           // Local Body
-                          buildDropdownField<int?>(
+                          FormUtils.buildDropdownField<int?>(
                             value: null,
                             labelText: 'Local Body',
                             items: const [],
@@ -350,7 +235,7 @@ class NewPrimaryContactUI extends StatelessWidget {
                           const SizedBox(height: 16),
 
                           // Ward
-                          buildDropdownField<int?>(
+                          FormUtils.buildDropdownField<int?>(
                             value: null,
                             labelText: 'Ward',
                             items: const [],
@@ -359,7 +244,7 @@ class NewPrimaryContactUI extends StatelessWidget {
                           const SizedBox(height: 16),
 
                           // Priority
-                          buildDropdownField<int>(
+                          FormUtils.buildDropdownField<int>(
                             value: selectedPriority,
                             labelText: 'Priority 5',
                             items: priorityLevels.map((int priority) {
@@ -373,46 +258,46 @@ class NewPrimaryContactUI extends StatelessWidget {
                           const SizedBox(height: 32),
 
                           // Residential Details Section
-                          buildSectionTitle('Residential Details'),
+                          FormUtils.buildSectionTitle('Residential Details'),
                           const SizedBox(height: 16),
 
                           // House Name
-                          buildTextField(
+                          FormUtils.buildTextField(
                             controller: addressController,
                             labelText: 'House Name',
                           ),
                           const SizedBox(height: 16),
 
                           // House Number
-                          buildTextField(
+                          FormUtils.buildTextField(
                             controller: TextEditingController(),
                             labelText: 'House Number',
                           ),
                           const SizedBox(height: 16),
 
                           // City
-                          buildTextField(
+                          FormUtils.buildTextField(
                             controller: TextEditingController(),
                             labelText: 'City',
                           ),
                           const SizedBox(height: 16),
 
                           // Post Office
-                          buildTextField(
+                          FormUtils.buildTextField(
                             controller: TextEditingController(),
                             labelText: 'Post Office',
                           ),
                           const SizedBox(height: 16),
 
                           // Pin Code
-                          buildTextField(
+                          FormUtils.buildTextField(
                             controller: TextEditingController(),
                             labelText: 'Pin Code',
                             keyboardType: TextInputType.number,
                           ),
                           const SizedBox(height: 32),
 
-                          // Tags Section - Now using the reusable AddTagsWidget
+                          // Tags Section
                           AddTagsWidget(
                             selectedTagCategory: selectedTagCategory,
                             selectedTagName: selectedTagName,
@@ -466,147 +351,13 @@ class NewPrimaryContactUI extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Loading overlay
-                if (isLoading)
-                  Container(
-                    color: Colors.black.withOpacity(0.3),
-                    child: const Center(
-                      child: Card(
-                        child: Padding(
-                          padding: EdgeInsets.all(20),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              CircularProgressIndicator(),
-                              SizedBox(height: 16),
-                              Text(
-                                'Saving contact...',
-                                style: TextStyle(fontSize: 16),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                // Loading overlay using FormUtils
+                FormUtils.buildLoadingOverlay(
+                  message: 'Saving contact...',
+                  isVisible: isLoading,
+                ),
               ],
             ),
-    );
-  }
-
-  Widget buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        color: Colors.black87,
-      ),
-    );
-  }
-
-  Widget buildTextField({
-    required TextEditingController controller,
-    required String labelText,
-    TextInputType? keyboardType,
-    String? Function(String?)? validator,
-    int? maxLines,
-    int? maxLength,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      validator: validator,
-      maxLines: maxLines ?? 1,
-      maxLength: maxLength,
-      style: const TextStyle(
-        fontSize: 16,
-        color: Colors.black87,
-      ),
-      decoration: InputDecoration(
-        labelText: labelText,
-        labelStyle: const TextStyle(
-          fontSize: 14,
-          color: Colors.grey,
-          fontWeight: FontWeight.w400,
-        ),
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF4285F4), width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 1),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 2),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        counterText: '',
-      ),
-    );
-  }
-
-  Widget buildDropdownField<T>({
-    required T? value,
-    required String labelText,
-    required List<DropdownMenuItem<T>> items,
-    required Function(T?) onChanged,
-    String? Function(T?)? validator,
-  }) {
-    return DropdownButtonFormField<T>(
-      value: value,
-      validator: validator,
-      decoration: InputDecoration(
-        labelText: labelText,
-        labelStyle: const TextStyle(
-          fontSize: 14,
-          color: Colors.grey,
-          fontWeight: FontWeight.w400,
-        ),
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF4285F4), width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 1),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 2),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        suffixIcon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
-      ),
-      style: const TextStyle(
-        fontSize: 16,
-        color: Colors.black87,
-      ),
-      items: items,
-      onChanged: onChanged,
-      dropdownColor: Colors.white,
     );
   }
 }
