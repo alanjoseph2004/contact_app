@@ -432,9 +432,6 @@ class _EditContactDialogState extends State<EditContactDialog> {
       throw Exception('Failed to update contact: ${response.body}');
     }
 
-    // Parse the response if needed
-    final responseData = jsonDecode(response.body);
-    // You could update the contact with any data returned from the API if needed
   }
 
   @override
