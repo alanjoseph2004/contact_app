@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'contact_logic.dart';
 import '../services/edit_primary_contact_service.dart';
+import '../widgets/add_tags_widget.dart'; // Add this import
 
 class EditPrimaryContactScreen extends StatefulWidget {
   final Contact contact;
@@ -628,10 +629,29 @@ class _EditPrimaryContactScreenState extends State<EditPrimaryContactScreen> {
                           ),
                           const SizedBox(height: 32),
 
-                          // Tags Section
-                          _buildSectionTitle('Add Tags'),
-                          const SizedBox(height: 16),
-                          _buildTagsSection(),
+                          // Tags Section - Using the reusable widget
+                          AddTagsWidget(
+                            selectedTagCategory: _selectedTagCategory,
+                            selectedTagName: _selectedTagName,
+                            tagCategories: _tagCategories,
+                            availableTagNames: _availableTagNames,
+                            tags: _tags,
+                            onTagCategoryChanged: (value) {
+                              setState(() {
+                                _selectedTagCategory = value;
+                                _updateAvailableTagNames();
+                              });
+                            },
+                            onTagNameChanged: (value) {
+                              setState(() {
+                                _selectedTagName = value;
+                              });
+                            },
+                            onAddTag: _addTag,
+                            onRemoveTag: _removeTag,
+                            sectionTitle: 'Add Tags',
+                            showSectionTitle: true,
+                          ),
                           const SizedBox(height: 32),
 
                           // Save Button
@@ -813,95 +833,6 @@ class _EditPrimaryContactScreenState extends State<EditPrimaryContactScreen> {
       items: items,
       onChanged: onChanged,
       dropdownColor: Colors.white,
-    );
-  }
-
-  Widget _buildTagsSection() {
-    return Column(
-      children: [
-        // Tag Category Dropdown
-        _buildDropdownField<int?>(
-          value: _selectedTagCategory,
-          labelText: 'Tag Category',
-          items: _tagCategories.map((category) {
-            return DropdownMenuItem<int?>(
-              value: category['id'],
-              child: Text(category['name']),
-            );
-          }).toList(),
-          onChanged: (value) {
-            setState(() {
-              _selectedTagCategory = value;
-              _updateAvailableTagNames();
-            });
-          },
-        ),
-        const SizedBox(height: 16),
-        
-        // Tag Name Dropdown with Add button
-        Row(
-          children: [
-            Expanded(
-              child: _buildDropdownField<int?>(
-                value: _selectedTagName,
-                labelText: 'Tag Name',
-                items: _availableTagNames.map((tag) {
-                  return DropdownMenuItem<int?>(
-                    value: tag['id'],
-                    child: Text(tag['name']),
-                  );
-                }).toList(),
-                onChanged: _availableTagNames.isEmpty ? (value) {} : (value) {
-                  setState(() {
-                    _selectedTagName = value;
-                  });
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            Container(
-              width: 50,
-              height: 50,
-              decoration: const BoxDecoration(
-                color: Color(0xFF4285F4),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.add, color: Colors.white, size: 24),
-                onPressed: _selectedTagName != null ? _addTag : null,
-              ),
-            ),
-          ],
-        ),
-        
-        // Display Added Tags
-        if (_tags.isNotEmpty) ...[
-          const SizedBox(height: 20),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _tags.map((tag) {
-              return Chip(
-                label: Text(
-                  tag['name'],
-                  style: const TextStyle(
-                    color: Colors.black87,
-                    fontSize: 14,
-                  ),
-                ),
-                deleteIcon: const Icon(
-                  Icons.close,
-                  size: 18,
-                  color: Colors.grey,
-                ),
-                onDeleted: () => _removeTag(tag),
-                backgroundColor: const Color(0xFFF0F0F0),
-                side: const BorderSide(color: Color(0xFFE0E0E0)),
-              );
-            }).toList(),
-          ),
-        ],
-      ],
     );
   }
 }
