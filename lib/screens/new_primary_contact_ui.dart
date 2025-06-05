@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/add_tags_widget.dart'; // Import the new AddTagsWidget
 
 class NewPrimaryContactUI extends StatelessWidget {
   final GlobalKey<FormState> formKey;
@@ -411,10 +412,20 @@ class NewPrimaryContactUI extends StatelessWidget {
                           ),
                           const SizedBox(height: 32),
 
-                          // Tags Section
-                          buildSectionTitle('Add Tags'),
-                          const SizedBox(height: 16),
-                          buildTagsSection(context),
+                          // Tags Section - Now using the reusable AddTagsWidget
+                          AddTagsWidget(
+                            selectedTagCategory: selectedTagCategory,
+                            selectedTagName: selectedTagName,
+                            tagCategories: tagCategories,
+                            availableTagNames: availableTagNames,
+                            tags: tags,
+                            onTagCategoryChanged: onTagCategoryChanged,
+                            onTagNameChanged: onTagNameChanged,
+                            onAddTag: onAddTag,
+                            onRemoveTag: onRemoveTag,
+                            sectionTitle: 'Add Tags',
+                            showSectionTitle: true,
+                          ),
                           const SizedBox(height: 32),
 
                           // Save Button
@@ -596,86 +607,6 @@ class NewPrimaryContactUI extends StatelessWidget {
       items: items,
       onChanged: onChanged,
       dropdownColor: Colors.white,
-    );
-  }
-
-  Widget buildTagsSection(BuildContext context) {
-    return Column(
-      children: [
-        // Tag Category Dropdown
-        buildDropdownField<int?>(
-          value: selectedTagCategory,
-          labelText: 'Tag Category',
-          items: tagCategories.map((category) {
-            return DropdownMenuItem<int?>(
-              value: category['id'],
-              child: Text(category['name']),
-            );
-          }).toList(),
-          onChanged: onTagCategoryChanged,
-        ),
-        const SizedBox(height: 16),
-        
-        // Tag Name Dropdown with Add button
-        Row(
-          children: [
-            Expanded(
-              child: buildDropdownField<int?>(
-                value: selectedTagName,
-                labelText: 'Tag Name',
-                items: availableTagNames.map((tag) {
-                  return DropdownMenuItem<int?>(
-                    value: tag['id'],
-                    child: Text(tag['name']),
-                  );
-                }).toList(),
-                onChanged: availableTagNames.isEmpty ? (value) {} : onTagNameChanged,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Container(
-              width: 50,
-              height: 50,
-              decoration: const BoxDecoration(
-                color: Color(0xFF4285F4),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.add, color: Colors.white, size: 24),
-                onPressed: selectedTagName != null ? onAddTag : null,
-              ),
-            ),
-          ],
-        ),
-        
-        // Display Added Tags
-        if (tags.isNotEmpty) ...[
-          const SizedBox(height: 20),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: tags.map((tag) {
-              return Chip(
-                label: Text(
-                  tag['name'],
-                  style: const TextStyle(
-                    color: Colors.black87,
-                    fontSize: 14,
-                  ),
-                ),
-                deleteIcon: const Icon(
-                  Icons.close,
-                  size: 18,
-                  color: Colors.grey,
-                ),
-                onDeleted: () => onRemoveTag(tag),
-                backgroundColor: const Color(0xFFF0F0F0),
-                side: const BorderSide(color: Color(0xFFE0E0E0)),
-              );
-            }).toList(),
-          ),
-        ],
-      ],
     );
   }
 }
