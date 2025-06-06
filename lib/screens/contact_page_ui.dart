@@ -113,35 +113,19 @@ class _ContactsPageState extends State<ContactsPage> {
 
   // Build the app bar
   PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: const Color.fromARGB(218, 3, 108, 194), // Material Blue to match tabs
-      elevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-        onPressed: () {
-          Navigator.of(context).pop();
-        },
+  return AppBar(
+    backgroundColor: const Color.fromARGB(255, 38, 113, 235), // Material Blue to match tabs
+    elevation: 0,
+    title: const Text(
+      'Contacts',
+      style: TextStyle(
+        color: Colors.white,
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
       ),
-      title: const Text(
-        'Contacts',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.search, color: Colors.white, size: 22),
-          onPressed: () {
-            // Navigate to search page
-            // Navigator.push(context, MaterialPageRoute(builder: (context) => ContactSearchPage()));
-          },
-        ),
-      ],
-    );
-  }
-
+    ),
+  );
+}
   // Build the tab selector
   Widget _buildTabSelector() {
     return Container(
@@ -163,7 +147,7 @@ class _ContactsPageState extends State<ContactsPage> {
                   border: _selectedTab == ContactType.primary
                       ? const Border(
                           bottom: BorderSide(
-                            color: Color(0xFF2196F3), // Blue color from screenshot
+                            color: Color(0xFF4285F4), // Blue color from screenshot
                             width: 3,
                           ),
                         )
@@ -174,7 +158,7 @@ class _ContactsPageState extends State<ContactsPage> {
                     'Primary',
                     style: TextStyle(
                       color: _selectedTab == ContactType.primary
-                          ? const Color(0xFF2196F3) // Blue for active tab
+                          ? const Color(0xFF4285F4) // Blue for active tab
                           : const Color(0xFF757575), // Medium grey for inactive
                       fontWeight: _selectedTab == ContactType.primary
                           ? FontWeight.w600
@@ -201,7 +185,7 @@ class _ContactsPageState extends State<ContactsPage> {
                   border: _selectedTab == ContactType.all
                       ? const Border(
                           bottom: BorderSide(
-                            color: Color(0xFF2196F3), // Blue color from screenshot
+                            color: Color(0xFF4285F4), // Blue color from screenshot
                             width: 3,
                           ),
                         )
@@ -212,7 +196,7 @@ class _ContactsPageState extends State<ContactsPage> {
                     'All Contacts',
                     style: TextStyle(
                       color: _selectedTab == ContactType.all
-                          ? const Color(0xFF2196F3) // Blue for active tab
+                          ? const Color(0xFF4285F4) // Blue for active tab
                           : const Color(0xFF757575), // Medium grey for inactive
                       fontWeight: _selectedTab == ContactType.all
                           ? FontWeight.w600
@@ -290,13 +274,13 @@ class _ContactsPageState extends State<ContactsPage> {
                 children: [
                   // Avatar
                   CircleAvatar(
-                    backgroundColor: const Color(0xFF2196F3).withOpacity(0.1),
+                    backgroundColor: const Color(0xFF4285F4).withOpacity(0.1),
                     backgroundImage: contact.avatarUrl != null ? NetworkImage(contact.avatarUrl!) : null,
                     radius: 24,
                     child: contact.avatarUrl == null ? Text(
                       contact.name.isNotEmpty ? contact.name[0].toUpperCase() : "?",
                       style: const TextStyle(
-                        color: Color(0xFF2196F3),
+                        color: Color(0xFF4285F4),
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
                       ),
@@ -364,11 +348,11 @@ class _ContactsPageState extends State<ContactsPage> {
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              border: Border.all(color: const Color(0xFF2196F3), width: 1.5),
+                              border: Border.all(color: const Color(0xFF4285F4), width: 1.5),
                             ),
                             child: const Icon(
                               Icons.message,
-                              color: Color(0xFF2196F3),
+                              color: Color(0xFF4285F4),
                               size: 20,
                             ),
                           ),
@@ -378,7 +362,7 @@ class _ContactsPageState extends State<ContactsPage> {
                       const SizedBox(width: 12),
                       
                       Material(
-                        color: const Color(0xFF2196F3),
+                        color: const Color(0xFF4285F4),
                         borderRadius: BorderRadius.circular(25),
                         child: InkWell(
                           borderRadius: BorderRadius.circular(25),
@@ -432,7 +416,7 @@ class _ContactsPageState extends State<ContactsPage> {
           _showContactCreationOptions();
         }
       },
-      backgroundColor: Color(0xFF2196F3),
+      backgroundColor: Color(0xFF4285F4),
       child: const Icon(Icons.person_add, color: Colors.white),
     );
   }
@@ -480,7 +464,7 @@ class _ContactsPageState extends State<ContactsPage> {
               leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Color(0xFF2196F3), // Use your blue theme color
+                  color: Color(0xFF4285F4), // Use your blue theme color
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.person, color: Colors.white, size: 20),
@@ -514,7 +498,7 @@ class _ContactsPageState extends State<ContactsPage> {
               leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Color(0xFF2196F3), // Use your blue theme color
+                  color: Color(0xFF4285F4), // Use your blue theme color
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.people, color: Colors.white, size: 20),
@@ -575,13 +559,13 @@ class _ContactsPageState extends State<ContactsPage> {
                 children: [
                   Icon(
                     Icons.contacts,
-                    color: Color(0xFF2196F3),
+                    color: Color(0xFF4285F4),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Contacts',
                     style: TextStyle(
-                      color: Color(0xFF2196F3),
+                      color: Color(0xFF4285F4),
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),

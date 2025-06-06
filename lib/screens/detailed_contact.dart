@@ -178,7 +178,7 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
                     ],
                   ),
                 ),
-                // Star icon with priority
+                // Priority number (replacing star)
                 if (_contact.isPrimary && _contact.priority != null)
                   Container(
                     width: 32,
@@ -187,33 +187,17 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
                       color: primaryColor,
                       shape: BoxShape.circle,
                     ),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Icon(
-                          Icons.star,
+                    child: Center(
+                      child: Text(
+                        '${_contact.priority}',
+                        style: const TextStyle(
                           color: Colors.white,
-                          size: 24,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Inter',
                         ),
-                        Positioned(
-                          child: Text(
-                            '${_contact.priority}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Inter',
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  )
-                else
-                  Icon(
-                    Icons.star,
-                    color: primaryColor,
-                    size: 28,
                   ),
               ],
             ),
@@ -247,198 +231,191 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
         ),
       ),
 
-      const SizedBox(height: 8),
-            // Contact Details Section
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Contact Details',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
-                      fontFamily: 'Inter',
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Address information
-                  if (_contact.address != null && _contact.address!.isNotEmpty)
-                    _buildDetailRow('Address', _contact.address!),
-                  
-                  // City information
-                  if (_contact.city != null && _contact.city!.isNotEmpty)
-                    _buildDetailRow('City', _contact.city!),
-                  
-                  // Constituency information
-                  if (_contact.constituency != null && _contact.constituency!.isNotEmpty)
-                    _buildDetailRow('Constituency', _contact.constituency!),
-                ],
+      // Contact Details Section
+      Container(
+        width: double.infinity,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Contact Details',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+                fontFamily: 'Inter',
               ),
             ),
-
-            const SizedBox(height: 8),
-
-            // Additional Information
-            if (_contact.type == ContactType.primary) ...[
-              Container(
-                width: double.infinity,
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Primary Contact Information',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
-                        fontFamily: 'Inter',
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    // Tags as chips
-                    if (_contact.tags != null && _contact.tags!.isNotEmpty)
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: _contact.tags!.map((tag) => Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: primaryColor,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            tag,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              fontFamily: 'Inter',
-                            ),
-                          ),
-                        )).toList(),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-
-            // Referral Information (for All Contacts)
-            if (_contact.type == ContactType.all && _contact.referredBy != null) ...[
-              Container(
-                width: double.infinity,
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Contact Details',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
-                        fontFamily: 'Inter',
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildDetailRow('Referred by', 
-                      '${_contact.referredBy!['referred_first_name']} ${_contact.referredBy!['referred_last_name'] ?? ''}'),
-                    _buildDetailRow('Referral Phone', 
-                      '${_contact.referredBy!['referred_country_code'] ?? ''} ${_contact.referredBy!['referred_phone'] ?? ''}'),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-
-            // Notes Section
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Notes',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
-                      fontFamily: 'Inter',
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    _contact.note ?? 'No notes available.',
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: _contact.note == null ? Colors.grey.shade500 : Colors.black87,
-                      fontFamily: 'Inter',
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            const SizedBox(height: 16),
             
-            const SizedBox(height: 24),
+            // Address information
+            if (_contact.address != null && _contact.address!.isNotEmpty)
+              _buildDetailRow('Address', _contact.address!),
+            
+            // City information
+            if (_contact.city != null && _contact.city!.isNotEmpty)
+              _buildDetailRow('City', _contact.city!),
+            
+            // Constituency information
+            if (_contact.constituency != null && _contact.constituency!.isNotEmpty)
+              _buildDetailRow('Constituency', _contact.constituency!),
           ],
         ),
       ),
+
+      // Additional Information
+      if (_contact.type == ContactType.primary) ...[
+        Container(
+          width: double.infinity,
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Primary Contact Information',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                  fontFamily: 'Inter',
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Tags as chips
+              if (_contact.tags != null && _contact.tags!.isNotEmpty)
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _contact.tags!.map((tag) => Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: primaryColor,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      tag,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        fontFamily: 'Inter',
+                      ),
+                    ),
+                  )).toList(),
+                ),
+            ],
+          ),
+        ),
+      ],
+
+      // Referral Information (for All Contacts)
+      if (_contact.type == ContactType.all && _contact.referredBy != null) ...[
+        Container(
+          width: double.infinity,
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Contact Details',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                  fontFamily: 'Inter',
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildDetailRow('Referred by', 
+                '${_contact.referredBy!['referred_first_name']} ${_contact.referredBy!['referred_last_name'] ?? ''}'),
+              _buildDetailRow('Referral Phone', 
+                '${_contact.referredBy!['referred_country_code'] ?? ''} ${_contact.referredBy!['referred_phone'] ?? ''}'),
+            ],
+          ),
+        ),
+      ],
+
+      // Notes Section
+      Container(
+        width: double.infinity,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Notes',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+                fontFamily: 'Inter',
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _contact.note ?? 'No notes available.',
+              style: TextStyle(
+                fontSize: 15,
+                color: _contact.note == null ? Colors.grey.shade500 : Colors.black87,
+                fontFamily: 'Inter',
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+),
     );
   }
 
