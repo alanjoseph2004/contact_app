@@ -22,6 +22,14 @@ class _ContactsPageState extends State<ContactsPage> {
   late List<Contact> _contacts;
   late bool _isLoading;
 
+  // Define consistent color scheme
+  static const Color _primaryBlue = Color(0xFF4285F4);
+  static const Color _textPrimary = Color(0xFF212121);
+  static const Color _textSecondary = Color(0xFF757575);
+  static const Color _textTertiary = Color(0xFF9E9E9E);
+  static const Color _dividerColor = Color(0xFFE0E0E0);
+  static const Color _backgroundColor = Colors.white;
+
   @override
   void initState() {
     super.initState();
@@ -45,19 +53,23 @@ class _ContactsPageState extends State<ContactsPage> {
     if (_isLoading) {
       return const Expanded(
         child: Center(
-          child: CircularProgressIndicator(),
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(_primaryBlue),
+          ),
         ),
       );
     }
 
     if (sortedKeys.isEmpty) {
-      return const Expanded(
+      return Expanded(
         child: Center(
           child: Text(
             'No contacts found',
             style: TextStyle(
+              fontFamily: 'Inter',
               fontSize: 16,
-              color: Color(0xFF757575),
+              fontWeight: FontWeight.w400,
+              color: _textSecondary,
             ),
           ),
         ),
@@ -78,8 +90,10 @@ class _ContactsPageState extends State<ContactsPage> {
                 child: Text(
                   key,
                   style: const TextStyle(
+                    fontFamily: 'Inter',
                     fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
+                    color: _textPrimary,
                   ),
                 ),
               ),
@@ -98,7 +112,7 @@ class _ContactsPageState extends State<ContactsPage> {
     final sortedKeys = _logic.getSortedKeys(groupedContacts);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: _backgroundColor,
       appBar: _buildAppBar(),
       body: Column(
         children: [
@@ -113,19 +127,21 @@ class _ContactsPageState extends State<ContactsPage> {
 
   // Build the app bar
   PreferredSizeWidget _buildAppBar() {
-  return AppBar(
-    backgroundColor: const Color.fromARGB(255, 38, 113, 235), // Material Blue to match tabs
-    elevation: 0,
-    title: const Text(
-      'Contacts',
-      style: TextStyle(
-        color: Colors.white,
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
+    return AppBar(
+      backgroundColor: _primaryBlue,
+      elevation: 0,
+      title: const Text(
+        'Contacts',
+        style: TextStyle(
+          fontFamily: 'Inter',
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
+
   // Build the tab selector
   Widget _buildTabSelector() {
     return Container(
@@ -147,7 +163,7 @@ class _ContactsPageState extends State<ContactsPage> {
                   border: _selectedTab == ContactType.primary
                       ? const Border(
                           bottom: BorderSide(
-                            color: Color(0xFF4285F4), // Blue color from screenshot
+                            color: _primaryBlue,
                             width: 3,
                           ),
                         )
@@ -157,9 +173,10 @@ class _ContactsPageState extends State<ContactsPage> {
                   child: Text(
                     'Primary',
                     style: TextStyle(
+                      fontFamily: 'Inter',
                       color: _selectedTab == ContactType.primary
-                          ? const Color(0xFF4285F4) // Blue for active tab
-                          : const Color(0xFF757575), // Medium grey for inactive
+                          ? _primaryBlue
+                          : _textSecondary,
                       fontWeight: _selectedTab == ContactType.primary
                           ? FontWeight.w600
                           : FontWeight.w500,
@@ -185,7 +202,7 @@ class _ContactsPageState extends State<ContactsPage> {
                   border: _selectedTab == ContactType.all
                       ? const Border(
                           bottom: BorderSide(
-                            color: Color(0xFF4285F4), // Blue color from screenshot
+                            color: _primaryBlue,
                             width: 3,
                           ),
                         )
@@ -195,9 +212,10 @@ class _ContactsPageState extends State<ContactsPage> {
                   child: Text(
                     'All Contacts',
                     style: TextStyle(
+                      fontFamily: 'Inter',
                       color: _selectedTab == ContactType.all
-                          ? const Color(0xFF4285F4) // Blue for active tab
-                          : const Color(0xFF757575), // Medium grey for inactive
+                          ? _primaryBlue
+                          : _textSecondary,
                       fontWeight: _selectedTab == ContactType.all
                           ? FontWeight.w600
                           : FontWeight.w500,
@@ -231,16 +249,47 @@ class _ContactsPageState extends State<ContactsPage> {
               context: context,
               builder: (BuildContext context) {
                 return AlertDialog(
-                  title: const Text("Delete Contact"),
-                  content: Text("Are you sure you want to delete ${contact.name}?"),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  title: Text(
+                    "Delete Contact",
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w600,
+                      color: _textPrimary,
+                    ),
+                  ),
+                  content: Text(
+                    "Are you sure you want to delete ${contact.name}?",
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w400,
+                      color: _textSecondary,
+                    ),
+                  ),
                   actions: <Widget>[
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(false),
-                      child: const Text("CANCEL"),
+                      child: Text(
+                        "CANCEL",
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w500,
+                          color: _textSecondary,
+                        ),
+                      ),
                     ),
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(true),
-                      child: const Text("DELETE"),
+                      child: Text(
+                        "DELETE",
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w500,
+                          color: Colors.red,
+                        ),
+                      ),
                     ),
                   ],
                 );
@@ -248,23 +297,29 @@ class _ContactsPageState extends State<ContactsPage> {
             );
           },
           onDismissed: (direction) {
-            // Assuming ContactService is properly imported and available
             ContactService.deleteContact(contact.id);
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("${contact.name} deleted"))
+              SnackBar(
+                content: Text(
+                  "${contact.name} deleted",
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                backgroundColor: _textPrimary,
+              ),
             );
             _loadContacts();
           },
           child: InkWell(
             onTap: () {
-              // Navigate to the detailed contact page
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => DetailedContactPage(contact: contact),
                 ),
               ).then((_) {
-                // Reload contacts when returning from the detailed contact page
                 _loadContacts();
               });
             },
@@ -274,13 +329,14 @@ class _ContactsPageState extends State<ContactsPage> {
                 children: [
                   // Avatar
                   CircleAvatar(
-                    backgroundColor: const Color(0xFF4285F4).withOpacity(0.1),
+                    backgroundColor: _primaryBlue.withOpacity(0.1),
                     backgroundImage: contact.avatarUrl != null ? NetworkImage(contact.avatarUrl!) : null,
                     radius: 24,
                     child: contact.avatarUrl == null ? Text(
                       contact.name.isNotEmpty ? contact.name[0].toUpperCase() : "?",
                       style: const TextStyle(
-                        color: Color(0xFF4285F4),
+                        fontFamily: 'Inter',
+                        color: _primaryBlue,
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
                       ),
@@ -297,9 +353,10 @@ class _ContactsPageState extends State<ContactsPage> {
                         Text(
                           contact.name,
                           style: const TextStyle(
+                            fontFamily: 'Inter',
                             fontWeight: FontWeight.w600,
                             fontSize: 16,
-                            color: Color(0xFF212121),
+                            color: _textPrimary,
                           ),
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1,
@@ -308,8 +365,9 @@ class _ContactsPageState extends State<ContactsPage> {
                         Text(
                           contact.phoneNumber,
                           style: const TextStyle(
+                            fontFamily: 'Inter',
                             fontSize: 14,
-                            color: Color(0xFF757575),
+                            color: _textSecondary,
                             fontWeight: FontWeight.w400,
                           ),
                           overflow: TextOverflow.ellipsis,
@@ -321,8 +379,10 @@ class _ContactsPageState extends State<ContactsPage> {
                             child: Text(
                               'Referred by: ${contact.referredBy!['referred_first_name']} ${contact.referredBy!['referred_last_name'] ?? ''}',
                               style: const TextStyle(
+                                fontFamily: 'Inter',
                                 fontSize: 12,
-                                color: Color(0xFF9E9E9E),
+                                color: _textTertiary,
+                                fontWeight: FontWeight.w400,
                                 fontStyle: FontStyle.italic,
                               ),
                               overflow: TextOverflow.ellipsis,
@@ -348,11 +408,11 @@ class _ContactsPageState extends State<ContactsPage> {
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              border: Border.all(color: const Color(0xFF4285F4), width: 1.5),
+                              border: Border.all(color: _primaryBlue, width: 1.5),
                             ),
                             child: const Icon(
                               Icons.message,
-                              color: Color(0xFF4285F4),
+                              color: _primaryBlue,
                               size: 20,
                             ),
                           ),
@@ -362,7 +422,7 @@ class _ContactsPageState extends State<ContactsPage> {
                       const SizedBox(width: 12),
                       
                       Material(
-                        color: const Color(0xFF4285F4),
+                        color: _primaryBlue,
                         borderRadius: BorderRadius.circular(25),
                         child: InkWell(
                           borderRadius: BorderRadius.circular(25),
@@ -391,7 +451,7 @@ class _ContactsPageState extends State<ContactsPage> {
           margin: const EdgeInsets.only(left: 64),
           height: 1,
           decoration: const BoxDecoration(
-            color: Color(0xFFE0E0E0),
+            color: _dividerColor,
           ),
         ),
       ],
@@ -403,46 +463,40 @@ class _ContactsPageState extends State<ContactsPage> {
     return FloatingActionButton(
       onPressed: () {
         if (_selectedTab == ContactType.primary) {
-          // For primary contacts tab, directly navigate to new primary contact page
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const NewPrimaryContactPage()),
           ).then((_) {
-            // Reload contacts when returning from the new contact page
             _loadContacts();
           });
         } else {
-          // For all contacts tab, show a popup menu with Google Notes style
           _showContactCreationOptions();
         }
       },
-      backgroundColor: Color(0xFF4285F4),
+      backgroundColor: _primaryBlue,
       child: const Icon(Icons.person_add, color: Colors.white),
     );
   }
 
   void _showContactCreationOptions() {
-    // Calculate position to show menu above the FAB
     final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
     
-    // Position the menu further above the FAB
     final position = RelativeRect.fromRect(
       Rect.fromLTRB(
-        MediaQuery.of(context).size.width - 200, // Left position
-        MediaQuery.of(context).size.height - 270, // Top position (moved higher above FAB)
-        16, // Right padding
-        150,  // Bottom padding (increased to move options up)
+        MediaQuery.of(context).size.width - 200,
+        MediaQuery.of(context).size.height - 270,
+        16,
+        150,
       ),
       Offset.zero & (overlay?.size ?? Size.zero),
     );
 
-    // Show the popup menu with transparent background
     showMenu<String>(
       context: context,
       position: position,
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      color: Colors.transparent, // Transparent background
+      color: Colors.transparent,
       items: [
         PopupMenuItem<String>(
           padding: EdgeInsets.zero,
@@ -463,17 +517,19 @@ class _ContactsPageState extends State<ContactsPage> {
             child: ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Color(0xFF4285F4), // Use your blue theme color
+                decoration: const BoxDecoration(
+                  color: _primaryBlue,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.person, color: Colors.white, size: 20),
               ),
-              title: const Text(
+              title: Text(
                 'Create Single Contact',
                 style: TextStyle(
+                  fontFamily: 'Inter',
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
+                  color: _textPrimary,
                 ),
               ),
             ),
@@ -497,17 +553,19 @@ class _ContactsPageState extends State<ContactsPage> {
             child: ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Color(0xFF4285F4), // Use your blue theme color
+                decoration: const BoxDecoration(
+                  color: _primaryBlue,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.people, color: Colors.white, size: 20),
               ),
-              title: const Text(
+              title: Text(
                 'Create Bulk Contacts',
                 style: TextStyle(
+                  fontFamily: 'Inter',
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
+                  color: _textPrimary,
                 ),
               ),
             ),
@@ -546,10 +604,9 @@ class _ContactsPageState extends State<ContactsPage> {
           ),
         ],
       ),
-      // Using a simple Container instead of BottomNavigationBar
       child: SafeArea(
         child: Container(
-          height: 61, // Standard navigation bar height
+          height: 61,
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -557,15 +614,16 @@ class _ContactsPageState extends State<ContactsPage> {
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.contacts,
-                    color: Color(0xFF4285F4),
+                    color: _primaryBlue,
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Contacts',
                     style: TextStyle(
-                      color: Color(0xFF4285F4),
+                      fontFamily: 'Inter',
+                      color: _primaryBlue,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
