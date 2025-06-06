@@ -20,6 +20,11 @@ class BulkContactsUI extends StatelessWidget {
   final VoidCallback onAddNewContactForm;
   final VoidCallback onSaveBulkContacts;
 
+  // Define consistent color scheme matching contacts_page_ui.dart
+  static const Color _primaryBlue = Color(0xFF4285F4);
+  static const Color _textPrimary = Color(0xFF212121);
+  static const Color _backgroundColor = Colors.white;
+
   const BulkContactsUI({
     super.key,
     required this.formKey,
@@ -42,12 +47,12 @@ class BulkContactsUI extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: _backgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: _primaryBlue,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
           onPressed: () {
             Navigator.of(context).pop();
           },
@@ -55,15 +60,20 @@ class BulkContactsUI extends StatelessWidget {
         title: const Text(
           'Bulk Contacts Upload',
           style: TextStyle(
-            color: Colors.black,
-            fontSize: 17,
+            fontFamily: 'Inter',
+            color: Colors.white,
+            fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
         ),
         centerTitle: true,
       ),
       body: isInitialLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(_primaryBlue),
+              ),
+            )
           : Stack(
               children: [
                 Form(
@@ -85,7 +95,15 @@ class BulkContactsUI extends StatelessWidget {
                           items: primaryContacts.map((contact) {
                             return DropdownMenuItem<int?>(
                               value: contact['id'],
-                              child: Text("${contact['name']} (${contact['phone']})"),
+                              child: Text(
+                                "${contact['name']} (${contact['phone']})",
+                                style: const TextStyle(
+                                  fontFamily: 'Inter',
+                                  color: _textPrimary,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
                             );
                           }).toList(),
                           onChanged: onReferredByChanged,
@@ -126,13 +144,14 @@ class BulkContactsUI extends StatelessWidget {
                   bottom: 0,
                   child: Container(
                     padding: const EdgeInsets.all(16),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
+                    decoration: BoxDecoration(
+                      color: _backgroundColor,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black12,
+                          color: Colors.grey.withOpacity(0.2),
+                          spreadRadius: 0,
                           blurRadius: 10,
-                          offset: Offset(0, -2),
+                          offset: const Offset(0, -2),
                         ),
                       ],
                     ),
@@ -143,7 +162,7 @@ class BulkContactsUI extends StatelessWidget {
                             onPressed: onAddNewContactForm,
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              side: BorderSide(color: primaryColor),
+                              side: BorderSide(color: _primaryBlue),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -151,12 +170,13 @@ class BulkContactsUI extends StatelessWidget {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.add, color: primaryColor, size: 20),
+                                Icon(Icons.add, color: _primaryBlue, size: 20),
                                 const SizedBox(width: 8),
                                 Text(
                                   'Add Contact',
                                   style: TextStyle(
-                                    color: primaryColor,
+                                    fontFamily: 'Inter',
+                                    color: _primaryBlue,
                                     fontSize: 16,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -170,7 +190,7 @@ class BulkContactsUI extends StatelessWidget {
                           child: ElevatedButton(
                             onPressed: isLoading ? null : onSaveBulkContacts,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryColor,
+                              backgroundColor: _primaryBlue,
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -189,6 +209,7 @@ class BulkContactsUI extends StatelessWidget {
                               : const Text(
                                   'Save All Contacts',
                                   style: TextStyle(
+                                    fontFamily: 'Inter',
                                     fontSize: 16,
                                     fontWeight: FontWeight.w500,
                                     color: Colors.white,
@@ -236,6 +257,10 @@ class ContactFormWidget extends StatefulWidget {
 }
 
 class _ContactFormWidgetState extends State<ContactFormWidget> {
+  // Define consistent color scheme matching contacts_page_ui.dart
+  static const Color _textPrimary = Color(0xFF212121);
+  static const Color _backgroundColor = Colors.white;
+
   @override
   Widget build(BuildContext context) {
     // Get cities based on selected constituency
@@ -244,6 +269,7 @@ class _ContactFormWidgetState extends State<ContactFormWidget> {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: 2,
+      color: _backgroundColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
@@ -259,9 +285,10 @@ class _ContactFormWidgetState extends State<ContactFormWidget> {
                 Text(
                   'Contact #${widget.index + 1}',
                   style: const TextStyle(
+                    fontFamily: 'Inter',
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                    color: _textPrimary,
                   ),
                 ),
                 if (widget.showRemoveButton)
@@ -298,7 +325,15 @@ class _ContactFormWidgetState extends State<ContactFormWidget> {
               items: widget.constituencies.map<DropdownMenuItem<int?>>((constituency) {
                 return DropdownMenuItem<int?>(
                   value: constituency['id'],
-                  child: Text(constituency['name'].toString()),
+                  child: Text(
+                    constituency['name'].toString(),
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      color: _textPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
                 );
               }).toList(),
               onChanged: (value) {
@@ -322,7 +357,15 @@ class _ContactFormWidgetState extends State<ContactFormWidget> {
               items: availableCities.map<DropdownMenuItem<int?>>((city) {
                 return DropdownMenuItem<int?>(
                   value: city['id'],
-                  child: Text(city['name'].toString()),
+                  child: Text(
+                    city['name'].toString(),
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      color: _textPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
                 );
               }).toList(),
               onChanged: (value) {
