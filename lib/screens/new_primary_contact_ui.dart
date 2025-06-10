@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../widgets/add_tags_widget.dart';
-import '../widgets/personal_details_widget.dart'; // Import the new PersonalDetailsWidget
-import '../utils/form_utils.dart'; // Import form utilities
+import '../widgets/personal_details_widget.dart';
+import '../widgets/save_button_widget.dart'; // Import the new SaveButtonWidget
+import '../utils/form_utils.dart';
 
 class NewPrimaryContactUI extends StatelessWidget {
   final GlobalKey<FormState> formKey;
@@ -313,37 +314,11 @@ class NewPrimaryContactUI extends StatelessWidget {
                           ),
                           const SizedBox(height: 32),
 
-                          // Save Button
-                          SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: ElevatedButton(
-                              onPressed: isLoading ? null : onSave,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF4285F4),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(25),
-                                ),
-                                elevation: 0,
-                              ),
-                              child: isLoading 
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Text(
-                                    'Save Contact',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                            ),
+                          // Save Button - Now using SaveButtonWidget
+                          SaveButtonWidget(
+                            isLoading: isLoading,
+                            onPressed: onSave,
+                            buttonText: 'Save Contact',
                           ),
                           const SizedBox(height: 32),
                         ],
