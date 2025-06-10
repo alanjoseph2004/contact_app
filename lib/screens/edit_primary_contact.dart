@@ -3,6 +3,7 @@ import 'contact_logic.dart';
 import '../services/edit_primary_contact_service.dart';
 import '../widgets/add_tags_widget.dart';
 import '../widgets/personal_details_widget.dart';
+import '../widgets/save_button_widget.dart'; // Add this import
 import '../utils/form_utils.dart';
 
 class EditPrimaryContactScreen extends StatefulWidget {
@@ -539,37 +540,11 @@ class _EditPrimaryContactScreenState extends State<EditPrimaryContactScreen> {
                           ),
                           const SizedBox(height: 32),
 
-                          // Save Button
-                          SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: ElevatedButton(
-                              onPressed: _isLoading ? null : _updateContact,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF4285F4),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(25),
-                                ),
-                                elevation: 0,
-                              ),
-                              child: _isLoading 
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Text(
-                                    'Save Changes',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                            ),
+                          // Save Button - Using SaveButtonWidget
+                          SaveButtonWidget(
+                            isLoading: _isLoading,
+                            onPressed: _updateContact,
+                            buttonText: 'Save Changes',
                           ),
                           const SizedBox(height: 32),
                         ],
