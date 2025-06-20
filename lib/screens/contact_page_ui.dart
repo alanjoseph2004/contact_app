@@ -236,7 +236,7 @@ class _ContactsPageState extends State<ContactsPage> {
     return Column(
       children: [
         Dismissible(
-          key: Key(contact.id),
+          key: Key(contact.id?.toString() ?? ''),
           background: Container(
             color: Colors.red,
             alignment: Alignment.centerRight,
@@ -377,7 +377,7 @@ class _ContactsPageState extends State<ContactsPage> {
                           Padding(
                             padding: const EdgeInsets.only(top: 4),
                             child: Text(
-                              'Referred by: ${contact.referredBy!['referred_first_name']} ${contact.referredBy!['referred_last_name'] ?? ''}',
+                              'Referred by: ${contact.referredBy?.toString() ?? ''}',
                               style: const TextStyle(
                                 fontFamily: 'Inter',
                                 fontSize: 12,

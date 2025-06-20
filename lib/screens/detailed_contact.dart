@@ -181,8 +181,8 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
                           ],
                         ),
                       ),
-                      // Priority number (replacing star)
-                      if (_contact.isPrimary && _contact.priority != null)
+                      // Priority number (replacing star) - Fixed condition
+                      if (_contact.type == ContactType.primary && _contact.priority != null)
                         Container(
                           width: 32,
                           height: 32,
@@ -264,20 +264,79 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
                   ),
                   const SizedBox(height: 16),
                   
-                  // Address information
-                  if (_contact.address != null && _contact.address!.isNotEmpty)
-                    _buildDetailRow('Address', _contact.address!),
+                  // Use fullAddress helper or individual address fields
+                  if (_contact.fullAddress.isNotEmpty)
+                    _buildDetailRow('Address', _contact.fullAddress),
                   
-                  // City information
-                  if (_contact.city != null && _contact.city!.isNotEmpty)
-                    _buildDetailRow('City', _contact.city!),
+                  // Pin code
+                  if (_contact.pinCode != null && _contact.pinCode!.isNotEmpty)
+                    _buildDetailRow('Pin Code', _contact.pinCode!),
                   
-                  // Constituency information
+                  // Constituency information (backward compatibility)
                   if (_contact.constituency != null && _contact.constituency!.isNotEmpty)
                     _buildDetailRow('Constituency', _contact.constituency!),
                 ],
               ),
             ),
+
+            // Geographic/Political Information Section (New fields)
+            if (_hasGeographicInfo()) ...[
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: _backgroundColor,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Geographic/Political Information',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: _textPrimary,
+                        fontFamily: 'Inter',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    if (_contact.district != null)
+                      _buildDetailRow('District ID', _contact.district.toString()),
+                    
+                    if (_contact.assemblyConstituency != null)
+                      _buildDetailRow('Assembly Constituency', _contact.assemblyConstituency.toString()),
+                    
+                    if (_contact.partyBlock != null)
+                      _buildDetailRow('Party Block', _contact.partyBlock.toString()),
+                    
+                    if (_contact.partyConstituency != null)
+                      _buildDetailRow('Party Constituency', _contact.partyConstituency.toString()),
+                    
+                    if (_contact.booth != null)
+                      _buildDetailRow('Booth', _contact.booth.toString()),
+                    
+                    if (_contact.parliamentaryConstituency != null)
+                      _buildDetailRow('Parliamentary Constituency', _contact.parliamentaryConstituency.toString()),
+                    
+                    if (_contact.localBody != null)
+                      _buildDetailRow('Local Body', _contact.localBody.toString()),
+                    
+                    if (_contact.ward != null)
+                      _buildDetailRow('Ward', _contact.ward.toString()),
+                  ],
+                ),
+              ),
+            ],
 
             // Additional Information
             if (_contact.type == ContactType.primary) ...[
@@ -310,35 +369,54 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
                     ),
                     const SizedBox(height: 16),
                     
-                    // Tags as chips
+                    // Primary ID
+                    if (_contact.primaryID != null && _contact.primaryID!.isNotEmpty)
+                      _buildDetailRow('Primary ID', _contact.primaryID!),
+                    
+                    // Tags as chips - Fixed to handle List<int>
                     if (_contact.tags != null && _contact.tags!.isNotEmpty)
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: _contact.tags!.map((tag) => Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: _primaryBlue,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            tag,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Tags',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: _textSecondary,
                               fontFamily: 'Inter',
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
-                        )).toList(),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: _contact.tags!.map((tagId) => Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: _primaryBlue,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                'Tag $tagId', // Since tags are now IDs, display as "Tag ID"
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  fontFamily: 'Inter',
+                                ),
+                              ),
+                            )).toList(),
+                          ),
+                        ],
                       ),
                   ],
                 ),
               ),
             ],
 
-            // Referral Information (for All Contacts)
-            if (_contact.type == ContactType.all && _contact.referredBy != null) ...[
+            // Referral Information (for All Contacts) - Fixed field access
+            if (_contact.type == ContactType.all && _contact.referredByDetails != null) ...[
               Container(
                 width: double.infinity,
                 margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -367,10 +445,23 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    _buildDetailRow('Referred by', 
-                      '${_contact.referredBy!['referred_first_name']} ${_contact.referredBy!['referred_last_name'] ?? ''}'),
-                    _buildDetailRow('Referral Phone', 
-                      '${_contact.referredBy!['referred_country_code'] ?? ''} ${_contact.referredBy!['referred_phone'] ?? ''}'),
+                    
+                    // Show referredBy ID if available
+                    if (_contact.referredBy != null)
+                      _buildDetailRow('Referred By ID', _contact.referredBy.toString()),
+                    
+                    // Show referral details
+                    if (_contact.referredByDetails!['referred_first_name'] != null)
+                      _buildDetailRow('Referred by', 
+                        '${_contact.referredByDetails!['referred_first_name']} ${_contact.referredByDetails!['referred_last_name'] ?? ''}'),
+                    
+                    if (_contact.referredByDetails!['referred_phone'] != null)
+                      _buildDetailRow('Referral Phone', 
+                        '${_contact.referredByDetails!['referred_country_code'] ?? ''} ${_contact.referredByDetails!['referred_phone'] ?? ''}'),
+                    
+                    // Connection field for all contacts
+                    if (_contact.connection != null && _contact.connection!.isNotEmpty)
+                      _buildDetailRow('Connection', _contact.connection!),
                   ],
                 ),
               ),
@@ -421,6 +512,18 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
         ),
       ),
     );
+  }
+
+  // Helper method to check if geographic info exists
+  bool _hasGeographicInfo() {
+    return _contact.district != null ||
+           _contact.assemblyConstituency != null ||
+           _contact.partyBlock != null ||
+           _contact.partyConstituency != null ||
+           _contact.booth != null ||
+           _contact.parliamentaryConstituency != null ||
+           _contact.localBody != null ||
+           _contact.ward != null;
   }
 
   Widget _buildActionButton(IconData icon, String label, VoidCallback onTap, {bool isOutlined = false}) {
