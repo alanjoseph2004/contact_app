@@ -32,6 +32,7 @@ class Contact {
   final int? priority;
   final String? connection;
   final Map<String, dynamic>? referralDetails;
+  final int? primaryContactId;
 
   Contact({
     required this.id,
@@ -63,6 +64,7 @@ class Contact {
     this.priority,
     this.connection,
     this.referralDetails,
+    this.primaryContactId,
   }) {
     // Validate priority for primary contacts
     if (isPrimaryContact && priority != null) {
@@ -154,6 +156,7 @@ class Contact {
       'priority': isPrimaryContact ? priority : null,
       'connection': connection,
       'referralDetails': referralDetails,
+      'primaryContactId': primaryContactId,
     };
   }
 
@@ -189,38 +192,80 @@ class Contact {
       priority: json['priority'],
       connection: json['connection'],
       referralDetails: json['referralDetails'],
+      primaryContactId: json['primaryContactId'],
     );
   }
 
-  // Create contact from API response
+  // Create contact from API response (handles nested structure for primary contacts)
   factory Contact.fromApiResponse(Map<String, dynamic> json) {
-    return Contact(
-      id: json['id'],
-      referredBy: json['referred_by'],
-      firstName: json['first_name'],
-      lastName: json['last_name'],
-      email: json['email'],
-      countryCode: json['country_code'],
-      phone: json['phone'],
-      note: json['note'],
-      district: json['district'],
-      assemblyConstituency: json['assembly_constituency'],
-      partyBlock: json['party_block'],
-      partyConstituency: json['party_constituency'],
-      booth: json['booth'],
-      parliamentaryConstituency: json['parliamentary_constituency'],
-      localBody: json['local_body'],
-      ward: json['ward'],
-      houseName: json['house_name'],
-      houseNumber: json['house_number'],
-      city: json['city'],
-      postOffice: json['post_office'],
-      pinCode: json['pin_code'],
-      tags: json['tags'] != null ? List<int>.from(json['tags']) : null,
-      isPrimaryContact: json['is_primary_contact'] ?? false,
-      type: ContactType.primary, // Default from API
-      hasMessages: false,
-    );
+    // Check if this is a primary contact response with nested structure
+    if (json.containsKey('contact') && json['contact'] is Map<String, dynamic>) {
+      // This is a primary contact response with nested structure
+      final contactData = json['contact'] as Map<String, dynamic>;
+      final primaryContactId = json['id']; // The root level ID is the primaryContactId
+      final priority = json['priority'];
+      final connection = json['connection'];
+      
+      return Contact(
+        id: contactData['id'],
+        referredBy: contactData['referred_by'],
+        firstName: contactData['first_name'],
+        lastName: contactData['last_name'],
+        email: contactData['email'],
+        countryCode: contactData['country_code'],
+        phone: contactData['phone'],
+        note: contactData['note'],
+        district: contactData['district'],
+        assemblyConstituency: contactData['assembly_constituency'],
+        partyBlock: contactData['party_block'],
+        partyConstituency: contactData['party_constituency'],
+        booth: contactData['booth'],
+        parliamentaryConstituency: contactData['parliamentary_constituency'],
+        localBody: contactData['local_body'],
+        ward: contactData['ward'],
+        houseName: contactData['house_name'],
+        houseNumber: contactData['house_number'],
+        city: contactData['city'],
+        postOffice: contactData['post_office'],
+        pinCode: contactData['pin_code'],
+        tags: contactData['tags'] != null ? List<int>.from(contactData['tags']) : null,
+        isPrimaryContact: contactData['is_primary_contact'] ?? true, // Default to true for primary contact response
+        type: ContactType.primary,
+        hasMessages: false,
+        priority: priority,
+        connection: connection?.toString(),
+        primaryContactId: primaryContactId,
+      );
+    } else {
+      // This is a regular contact response (flat structure)
+      return Contact(
+        id: json['id'],
+        referredBy: json['referred_by'],
+        firstName: json['first_name'],
+        lastName: json['last_name'],
+        email: json['email'],
+        countryCode: json['country_code'],
+        phone: json['phone'],
+        note: json['note'],
+        district: json['district'],
+        assemblyConstituency: json['assembly_constituency'],
+        partyBlock: json['party_block'],
+        partyConstituency: json['party_constituency'],
+        booth: json['booth'],
+        parliamentaryConstituency: json['parliamentary_constituency'],
+        localBody: json['local_body'],
+        ward: json['ward'],
+        houseName: json['house_name'],
+        houseNumber: json['house_number'],
+        city: json['city'],
+        postOffice: json['post_office'],
+        pinCode: json['pin_code'],
+        tags: json['tags'] != null ? List<int>.from(json['tags']) : null,
+        isPrimaryContact: json['is_primary_contact'] ?? false,
+        type: ContactType.all, // Default for regular contacts
+        hasMessages: false,
+      );
+    }
   }
 
   // Create contact for API request
@@ -282,6 +327,7 @@ class Contact {
     int? priority,
     String? connection,
     Map<String, dynamic>? referralDetails,
+    int? primaryContactId,
   }) {
     return Contact(
       id: id ?? this.id,
@@ -313,6 +359,7 @@ class Contact {
       priority: priority ?? this.priority,
       connection: connection ?? this.connection,
       referralDetails: referralDetails ?? this.referralDetails,
+      primaryContactId: primaryContactId ?? this.primaryContactId,
     );
   }
 }
@@ -405,13 +452,18 @@ class ContactService {
     }
   }
   
-  // Save API primary contacts to local storage
-  static Future<bool> cacheApiPrimaryContacts(List<Contact> apiContacts) async {
+  // Save API primary contacts to local storage with proper handling of nested response
+  static Future<bool> cacheApiPrimaryContacts(List<Map<String, dynamic>> apiResponses) async {
     try {
+      // Convert API responses to Contact objects
+      final apiContacts = apiResponses
+          .map((response) => Contact.fromApiResponse(response))
+          .toList();
+      
       // First, get existing primary contacts to merge/update
       final existingContacts = await getPrimaryContactsFromStorage();
       
-      // Create a map of existing contacts by ID for easy lookup
+      // Create a map of existing contacts by contact ID for easy lookup
       final Map<int, Contact> contactMap = {
         for (var contact in existingContacts) contact.id: contact
       };
@@ -547,8 +599,6 @@ class ContactService {
     }
   }
   
-  
-  
   // Get contacts by type
   static Future<List<Contact>> getContactsByType(ContactType type) async {
     if (type == ContactType.primary) {
@@ -578,6 +628,16 @@ class ContactService {
       c.priority! >= 1 && 
       c.priority! <= 5
     ).toList()..sort((a, b) => a.priority!.compareTo(b.priority!));
+  }
+  
+  // Get contact by primary contact ID
+  static Future<Contact?> getContactByPrimaryContactId(int primaryContactId) async {
+    final contacts = await getPrimaryContactsFromStorage();
+    try {
+      return contacts.firstWhere((c) => c.primaryContactId == primaryContactId);
+    } catch (e) {
+      return null;
+    }
   }
   
   // Get contacts by tag
