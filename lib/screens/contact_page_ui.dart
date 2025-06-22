@@ -235,199 +235,136 @@ class _ContactsPageState extends State<ContactsPage> {
   Widget _buildContactTile(Contact contact) {
     return Column(
       children: [
-        Dismissible(
-          key: Key(contact.id.toString()),
-          background: Container(
-            color: Colors.red,
-            alignment: Alignment.centerRight,
-            padding: const EdgeInsets.only(right: 20),
-            child: const Icon(Icons.delete, color: Colors.white),
-          ),
-          direction: DismissDirection.endToStart,
-          confirmDismiss: (direction) async {
-            return await showDialog<bool>(
-              context: context,
-              builder: (BuildContext context) {
-                return AlertDialog(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  title: Text(
-                    "Delete Contact",
-                    style: TextStyle(
+        InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => DetailedContactPage(contact: contact),
+              ),
+            ).then((_) {
+              _loadContacts();
+            });
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Row(
+              children: [
+                // Avatar
+                CircleAvatar(
+                  backgroundColor: _primaryBlue.withOpacity(0.1),
+                  backgroundImage: contact.avatarUrl != null ? NetworkImage(contact.avatarUrl!) : null,
+                  radius: 24,
+                  child: contact.avatarUrl == null ? Text(
+                    contact.name.isNotEmpty ? contact.name[0].toUpperCase() : "?",
+                    style: const TextStyle(
                       fontFamily: 'Inter',
+                      color: _primaryBlue,
+                      fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color: _textPrimary,
                     ),
-                  ),
-                  content: Text(
-                    "Are you sure you want to delete ${contact.name}?",
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.w400,
-                      color: _textSecondary,
-                    ),
-                  ),
-                  actions: <Widget>[
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      child: Text(
-                        "CANCEL",
-                        style: TextStyle(
+                  ) : null,
+                ),
+                
+                const SizedBox(width: 16),
+                
+                // Contact details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        contact.name,
+                        style: const TextStyle(
                           fontFamily: 'Inter',
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          color: _textPrimary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        contact.phoneNumber,
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 14,
                           color: _textSecondary,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                      if (_selectedTab == ContactType.all && contact.referredBy != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            'Referred by: ${contact.referredBy}',
+                            style: const TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 12,
+                              color: _textTertiary,
+                              fontWeight: FontWeight.w400,
+                              fontStyle: FontStyle.italic,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                
+                // Action buttons
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(25),
+                        onTap: () {
+                          // Implement message functionality
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: _primaryBlue, width: 1.5),
+                          ),
+                          child: const Icon(
+                            Icons.message,
+                            color: _primaryBlue,
+                            size: 20,
+                          ),
                         ),
                       ),
                     ),
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(true),
-                      child: Text(
-                        "DELETE",
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w500,
-                          color: Colors.red,
+                    
+                    const SizedBox(width: 12),
+                    
+                    Material(
+                      color: _primaryBlue,
+                      borderRadius: BorderRadius.circular(25),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(25),
+                        onTap: () {
+                          // Implement call functionality
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          child: const Icon(
+                            Icons.phone,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                       ),
                     ),
                   ],
-                );
-              },
-            );
-          },
-          
-          child: InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => DetailedContactPage(contact: contact),
                 ),
-              ).then((_) {
-                _loadContacts();
-              });
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Row(
-                children: [
-                  // Avatar
-                  CircleAvatar(
-                    backgroundColor: _primaryBlue.withOpacity(0.1),
-                    backgroundImage: contact.avatarUrl != null ? NetworkImage(contact.avatarUrl!) : null,
-                    radius: 24,
-                    child: contact.avatarUrl == null ? Text(
-                      contact.name.isNotEmpty ? contact.name[0].toUpperCase() : "?",
-                      style: const TextStyle(
-                        fontFamily: 'Inter',
-                        color: _primaryBlue,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ) : null,
-                  ),
-                  
-                  const SizedBox(width: 16),
-                  
-                  // Contact details
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          contact.name,
-                          style: const TextStyle(
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                            color: _textPrimary,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          contact.phoneNumber,
-                          style: const TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 14,
-                            color: _textSecondary,
-                            fontWeight: FontWeight.w400,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                        if (_selectedTab == ContactType.all && contact.referredBy != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text(
-                              'Referred by: ${contact.referredBy}',
-                              style: const TextStyle(
-                                fontFamily: 'Inter',
-                                fontSize: 12,
-                                color: _textTertiary,
-                                fontWeight: FontWeight.w400,
-                                fontStyle: FontStyle.italic,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  
-                  // Action buttons
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(25),
-                          onTap: () {
-                            // Implement message functionality
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: _primaryBlue, width: 1.5),
-                            ),
-                            child: const Icon(
-                              Icons.message,
-                              color: _primaryBlue,
-                              size: 20,
-                            ),
-                          ),
-                        ),
-                      ),
-                      
-                      const SizedBox(width: 12),
-                      
-                      Material(
-                        color: _primaryBlue,
-                        borderRadius: BorderRadius.circular(25),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(25),
-                          onTap: () {
-                            // Implement call functionality
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            child: const Icon(
-                              Icons.phone,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+              ],
             ),
           ),
         ),
