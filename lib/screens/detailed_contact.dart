@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'contact_logic.dart';
-import 'edit_contact_primary.dart';
-import 'edit_all_contact.dart';
-import 'edit_primary_contact.dart';
+// import 'edit_contact_primary.dart';
+// import 'edit_all_contact.dart';
+// import 'edit_primary_contact.dart';
 
 class DetailedContactPage extends StatefulWidget {
   final Contact contact;
@@ -54,42 +54,42 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
             fontFamily: 'Inter',
           ),
         ),
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
-            child: Material(
-              color: _primaryBlue,
-              borderRadius: BorderRadius.circular(16),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: () => _navigateToEditContact(),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.edit,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      const Text(
-                        'Edit',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          fontFamily: 'Inter',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+        // actions: [
+        //   Container(
+        //     margin: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
+        //     child: Material(
+        //       color: _primaryBlue,
+        //       borderRadius: BorderRadius.circular(16),
+        //       child: InkWell(
+        //         borderRadius: BorderRadius.circular(16),
+        //         onTap: () => _navigateToEditContact(),
+        //         child: Container(
+        //           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        //           child: Row(
+        //             mainAxisSize: MainAxisSize.min,
+        //             children: [
+        //               const Icon(
+        //                 Icons.edit,
+        //                 color: Colors.white,
+        //                 size: 16,
+        //               ),
+        //               const SizedBox(width: 4),
+        //               const Text(
+        //                 'Edit',
+        //                 style: TextStyle(
+        //                   color: Colors.white,
+        //                   fontSize: 14,
+        //                   fontWeight: FontWeight.w500,
+        //                   fontFamily: 'Inter',
+        //                 ),
+        //               ),
+        //             ],
+        //           ),
+        //         ),
+        //       ),
+        //     ),
+        //   ),
+        // ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -492,56 +492,57 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
     );
   }
 
-  void _navigateToEditContact() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => _contact.type == ContactType.primary 
-            ? EditPrimaryContactScreen(contact: _contact)
-            : EditAllContactScreen(contact: _contact),
-      ),
-    );
+//   void _navigateToEditContact() async {
+//     final result = await Navigator.push(
+//       context,
+//       MaterialPageRoute(
+//         builder: (context) => _contact.type == ContactType.primary 
+//             ? EditPrimaryContactScreen(contact: _contact)
+//             : EditAllContactScreen(contact: _contact),
+//       ),
+//     );
 
-    // If contact was edited successfully, update the UI
-    if (result != null && result is Contact) {
-      setState(() {
-        _contact = result;
-      });
-    }
-  }
-}
+//     // If contact was edited successfully, update the UI
+//     if (result != null && result is Contact) {
+//       setState(() {
+//         _contact = result;
+//       });
+//     }
+//   }
+// }
 
-// Create a separate EditContactScreen for full screen editing
-class EditContactScreen extends StatelessWidget {
-  final Contact contact;
+// // Create a separate EditContactScreen for full screen editing
+// class EditContactScreen extends StatelessWidget {
+//   final Contact contact;
 
-  const EditContactScreen({
-    super.key,
-    required this.contact,
-  });
+//   const EditContactScreen({
+//     super.key,
+//     required this.contact,
+//   });
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF4285F4), // Updated to match primary blue
-        title: const Text(
-          'Edit Contact',
-          style: TextStyle(
-            color: Colors.white,
-            fontFamily: 'Inter',
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: EditContactDialog(
-        contact: contact,
-        primaryColor: const Color(0xFF4285F4), // Updated to match primary blue
-        isFullScreen: true,
-      ),
-    );
-  }
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         backgroundColor: const Color(0xFF4285F4), // Updated to match primary blue
+//         title: const Text(
+//           'Edit Contact',
+//           style: TextStyle(
+//             color: Colors.white,
+//             fontFamily: 'Inter',
+//           ),
+//         ),
+//         leading: IconButton(
+//           icon: const Icon(Icons.arrow_back, color: Colors.white),
+//           onPressed: () => Navigator.pop(context),
+//         ),
+//       ),
+//       body: EditContactDialog(
+//         contact: contact,
+//         primaryColor: const Color(0xFF4285F4), // Updated to match primary blue
+//         isFullScreen: true,
+//       ),
+//     );
+//   }
+// }
 }
