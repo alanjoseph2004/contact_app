@@ -236,7 +236,7 @@ class _ContactsPageState extends State<ContactsPage> {
     return Column(
       children: [
         Dismissible(
-          key: Key(contact.id),
+          key: Key(contact.id.toString()),
           background: Container(
             color: Colors.red,
             alignment: Alignment.centerRight,
@@ -296,22 +296,7 @@ class _ContactsPageState extends State<ContactsPage> {
               },
             );
           },
-          onDismissed: (direction) {
-            ContactService.deleteContact(contact.id);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  "${contact.name} deleted",
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                backgroundColor: _textPrimary,
-              ),
-            );
-            _loadContacts();
-          },
+          
           child: InkWell(
             onTap: () {
               Navigator.push(
@@ -377,7 +362,7 @@ class _ContactsPageState extends State<ContactsPage> {
                           Padding(
                             padding: const EdgeInsets.only(top: 4),
                             child: Text(
-                              'Referred by: ${contact.referredBy!['referred_first_name']} ${contact.referredBy!['referred_last_name'] ?? ''}',
+                              'Referred by: ${contact.referredBy}',
                               style: const TextStyle(
                                 fontFamily: 'Inter',
                                 fontSize: 12,

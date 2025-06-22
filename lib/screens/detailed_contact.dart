@@ -181,8 +181,8 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
                           ],
                         ),
                       ),
-                      // Priority number (replacing star)
-                      if (_contact.isPrimary && _contact.priority != null)
+                      // Priority number (replacing star) - Fixed property name
+                      if (_contact.isPrimaryContact && _contact.priority != null)
                         Container(
                           width: 32,
                           height: 32,
@@ -264,17 +264,45 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
                   ),
                   const SizedBox(height: 16),
                   
-                  // Address information
-                  if (_contact.address != null && _contact.address!.isNotEmpty)
-                    _buildDetailRow('Address', _contact.address!),
+                  // Address information - Using fullAddress property
+                  if (_contact.fullAddress.isNotEmpty)
+                    _buildDetailRow('Address', _contact.fullAddress),
                   
                   // City information
                   if (_contact.city != null && _contact.city!.isNotEmpty)
                     _buildDetailRow('City', _contact.city!),
                   
-                  // Constituency information
-                  if (_contact.constituency != null && _contact.constituency!.isNotEmpty)
-                    _buildDetailRow('Constituency', _contact.constituency!),
+                  // District information - Using correct property name
+                  if (_contact.district != null)
+                    _buildDetailRow('District', 'District ID: ${_contact.district}'),
+                  
+                  // Assembly Constituency information - Using correct property name
+                  if (_contact.assemblyConstituency != null)
+                    _buildDetailRow('Assembly Constituency', 'AC ID: ${_contact.assemblyConstituency}'),
+                  
+                  // Parliamentary Constituency information
+                  if (_contact.parliamentaryConstituency != null)
+                    _buildDetailRow('Parliamentary Constituency', 'PC ID: ${_contact.parliamentaryConstituency}'),
+                  
+                  // Local Body information
+                  if (_contact.localBody != null)
+                    _buildDetailRow('Local Body', 'LB ID: ${_contact.localBody}'),
+                  
+                  // Ward information
+                  if (_contact.ward != null)
+                    _buildDetailRow('Ward', 'Ward: ${_contact.ward}'),
+                  
+                  // Booth information
+                  if (_contact.booth != null)
+                    _buildDetailRow('Booth', 'Booth: ${_contact.booth}'),
+                  
+                  // Post Office information
+                  if (_contact.postOffice != null && _contact.postOffice!.isNotEmpty)
+                    _buildDetailRow('Post Office', _contact.postOffice!),
+                  
+                  // PIN Code information
+                  if (_contact.pinCode != null && _contact.pinCode!.isNotEmpty)
+                    _buildDetailRow('PIN Code', _contact.pinCode!),
                 ],
               ),
             ),
@@ -310,19 +338,41 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
                     ),
                     const SizedBox(height: 16),
                     
-                    // Tags as chips
-                    if (_contact.tags != null && _contact.tags!.isNotEmpty)
+                    // Party information
+                    if (_contact.partyBlock != null)
+                      _buildDetailRow('Party Block', 'PB ID: ${_contact.partyBlock}'),
+                    
+                    if (_contact.partyConstituency != null)
+                      _buildDetailRow('Party Constituency', 'PC ID: ${_contact.partyConstituency}'),
+                    
+                    // Connection information
+                    if (_contact.connection != null && _contact.connection!.isNotEmpty)
+                      _buildDetailRow('Connection', _contact.connection!),
+                    
+                    // Tags as chips - Using List<int> instead of List<String>
+                    if (_contact.tags != null && _contact.tags!.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Tags:',
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: _textSecondary,
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
-                        children: _contact.tags!.map((tag) => Container(
+                        children: _contact.tags!.map((tagId) => Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
                             color: _primaryBlue,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            tag,
+                            'Tag $tagId', // Since tags are IDs, display as "Tag ID"
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 14,
@@ -332,12 +382,13 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
                           ),
                         )).toList(),
                       ),
+                    ],
                   ],
                 ),
               ),
             ],
 
-            // Referral Information (for All Contacts)
+            // Referral Information (for All Contacts) - Fixed property access
             if (_contact.type == ContactType.all && _contact.referredBy != null) ...[
               Container(
                 width: double.infinity,
@@ -367,10 +418,18 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    _buildDetailRow('Referred by', 
-                      '${_contact.referredBy!['referred_first_name']} ${_contact.referredBy!['referred_last_name'] ?? ''}'),
-                    _buildDetailRow('Referral Phone', 
-                      '${_contact.referredBy!['referred_country_code'] ?? ''} ${_contact.referredBy!['referred_phone'] ?? ''}'),
+                    // Updated to use correct property - referredBy is an int, not a Map
+                    _buildDetailRow('Referred by ID', _contact.referredBy.toString()),
+                    
+                    // If you have referralDetails, use that instead
+                    if (_contact.referralDetails != null) ...[
+                      if (_contact.referralDetails!['referred_first_name'] != null)
+                        _buildDetailRow('Referred by Name', 
+                          '${_contact.referralDetails!['referred_first_name']} ${_contact.referralDetails!['referred_last_name'] ?? ''}'),
+                      if (_contact.referralDetails!['referred_phone'] != null)
+                        _buildDetailRow('Referral Phone', 
+                          '${_contact.referralDetails!['referred_country_code'] ?? ''} ${_contact.referralDetails!['referred_phone'] ?? ''}'),
+                    ],
                   ],
                 ),
               ),

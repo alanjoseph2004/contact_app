@@ -26,7 +26,7 @@ class ContactRepositoryService {
         return await _fetchAndCacheAllContacts();
       }
     } else {
-      // Local contacts
+      // Local contacts or both
       return await ContactService.getContacts();
     }
   }
@@ -47,8 +47,8 @@ class ContactRepositoryService {
     try {
       final contacts = await ContactApiService.fetchPrimaryContacts();
       
-      // Cache the contacts
-      await ContactService.savePrimaryContacts(contacts);
+      // Cache the contacts using the new method from ContactService
+      await ContactService.cacheApiPrimaryContacts(contacts);
       
       // Save timestamp and set initial data flag
       await ContactCacheService.saveLastFetchTimestamp(ContactType.primary);
@@ -90,8 +90,8 @@ class ContactRepositoryService {
   //     // Merge updated contacts with cached ones
   //     final mergedContacts = _mergeContacts(cachedContacts, updatedContacts);
       
-  //     // Update cache and timestamp
-  //     await ContactService.savePrimaryContacts(mergedContacts);
+  //     // Update cache and timestamp using new method
+  //     await ContactService.cacheApiPrimaryContacts(mergedContacts);
   //     await ContactCacheService.saveLastFetchTimestamp(ContactType.primary);
       
   //     return mergedContacts;
@@ -110,15 +110,15 @@ class ContactRepositoryService {
     try {
       final contacts = await ContactApiService.fetchAllContacts();
       
-      // Cache all contacts
-      await ContactService.saveAllContacts(contacts);
+      // Cache all contacts using the new method from ContactService
+      await ContactService.cacheApiAllContacts(contacts);
       
       // Save timestamp and set initial data flag
       await ContactCacheService.saveLastFetchTimestamp(ContactType.all);
       await ContactCacheService.setHasInitialData(true);
       
       // Filter out primary contacts for display
-      return contacts.where((contact) => !contact.isPrimary).toList();
+      return contacts.where((contact) => !contact.isPrimaryContact).toList();
     } catch (e) {
       // Try to load from cache if API fails
       final cachedContacts = await ContactService.getAllContactsFromStorage();
@@ -126,7 +126,7 @@ class ContactRepositoryService {
         throw Exception('Failed to load all contacts and no cache available: $e');
       }
       // Filter out primary contacts
-      return cachedContacts.where((contact) => !contact.isPrimary).toList();
+      return cachedContacts.where((contact) => !contact.isPrimaryContact).toList();
     }
   }
 
@@ -149,18 +149,18 @@ class ContactRepositoryService {
       
   //     if (updatedContacts.isEmpty) {
   //       // No updates, return filtered cached data
-  //       return cachedContacts.where((contact) => !contact.isPrimary).toList();
+  //       return cachedContacts.where((contact) => !contact.isPrimaryContact).toList();
   //     }
       
   //     // Merge updated contacts with cached ones
   //     final mergedContacts = _mergeContacts(cachedContacts, updatedContacts);
       
-  //     // Update cache and timestamp
-  //     await ContactService.saveAllContacts(mergedContacts);
+  //     // Update cache and timestamp using new method
+  //     await ContactService.cacheApiAllContacts(mergedContacts);
   //     await ContactCacheService.saveLastFetchTimestamp(ContactType.all);
       
   //     // Filter out primary contacts for display
-  //     return mergedContacts.where((contact) => !contact.isPrimary).toList();
+  //     return mergedContacts.where((contact) => !contact.isPrimaryContact).toList();
   //   } catch (e) {
   //     // Return filtered cached contacts if update fails
   //     final cachedContacts = await ContactService.getAllContactsFromStorage();
@@ -173,8 +173,8 @@ class ContactRepositoryService {
 
   /// Merge updated contacts with cached contacts
   static List<Contact> _mergeContacts(List<Contact> cachedContacts, List<Contact> updatedContacts) {
-    // Create a map from cached contacts for easy lookup
-    Map<String, Contact> contactMap = {
+    // Create a map from cached contacts for easy lookup using int id instead of String
+    Map<int, Contact> contactMap = {
       for (var contact in cachedContacts) contact.id: contact
     };
     
