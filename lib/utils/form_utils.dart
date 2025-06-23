@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class FormUtils {
-  // Common text field styling
+  // Common text field styling - Updated to match PersonalDetailsWidget
   static Widget buildTextField({
     required TextEditingController controller,
     required String labelText,
@@ -28,34 +28,39 @@ class FormUtils {
           fontWeight: FontWeight.w400,
         ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: const Color(0xFFF5F5F5), // Updated to match PersonalDetailsWidget
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+          borderRadius: BorderRadius.circular(13), // Updated to match PersonalDetailsWidget
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 0.5), // Reduced thickness
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+          borderRadius: BorderRadius.circular(13),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 0.5), // Reduced thickness
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF4285F4), width: 2),
+          borderRadius: BorderRadius.circular(13),
+          borderSide: const BorderSide(color: Color(0xFF4285F4), width: 1.5), // Reduced thickness
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 1),
+          borderRadius: BorderRadius.circular(13),
+          borderSide: const BorderSide(color: Colors.red, width: 0.5), // Reduced thickness
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 2),
+          borderRadius: BorderRadius.circular(13),
+          borderSide: const BorderSide(color: Colors.red, width: 1.5), // Reduced thickness
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.only( // Updated to match PersonalDetailsWidget
+          top: 10,
+          right: 16,
+          bottom: 10,
+          left: 16,
+        ),
         counterText: '',
       ),
     );
   }
 
-  // Common dropdown field styling
+  // Common dropdown field styling - Updated to match PersonalDetailsWidget
   static Widget buildDropdownField<T>({
     required T? value,
     required String labelText,
@@ -74,28 +79,33 @@ class FormUtils {
           fontWeight: FontWeight.w400,
         ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: const Color(0xFFF5F5F5), // Updated to match PersonalDetailsWidget
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+          borderRadius: BorderRadius.circular(13), // Updated to match PersonalDetailsWidget
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 0.5), // Reduced thickness
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+          borderRadius: BorderRadius.circular(13),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 0.5), // Reduced thickness
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF4285F4), width: 2),
+          borderRadius: BorderRadius.circular(13),
+          borderSide: const BorderSide(color: Color(0xFF4285F4), width: 1.5), // Reduced thickness
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 1),
+          borderRadius: BorderRadius.circular(13),
+          borderSide: const BorderSide(color: Colors.red, width: 0.5), // Reduced thickness
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 2),
+          borderRadius: BorderRadius.circular(13),
+          borderSide: const BorderSide(color: Colors.red, width: 1.5), // Reduced thickness
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.only( // Updated to match PersonalDetailsWidget
+          top: 10,
+          right: 16,
+          bottom: 10,
+          left: 16,
+        ),
         suffixIcon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
       ),
       style: const TextStyle(

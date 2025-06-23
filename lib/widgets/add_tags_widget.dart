@@ -141,28 +141,33 @@ class AddTagsWidget extends StatelessWidget {
           fontWeight: FontWeight.w400,
         ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: const Color(0xFFF5F5F5), // Changed from Colors.white to match PersonalDetailsWidget
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+          borderRadius: BorderRadius.circular(13), // Changed from 12 to 13
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 0.5), // Reduced thickness
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+          borderRadius: BorderRadius.circular(13), // Changed from 12 to 13
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 0.5), // Reduced thickness
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF4285F4), width: 2),
+          borderRadius: BorderRadius.circular(13), // Changed from 12 to 13
+          borderSide: const BorderSide(color: Color(0xFF4285F4), width: 1.5), // Reduced thickness
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 1),
+          borderRadius: BorderRadius.circular(13), // Changed from 12 to 13
+          borderSide: const BorderSide(color: Colors.red, width: 0.5), // Reduced thickness
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 2),
+          borderRadius: BorderRadius.circular(13), // Changed from 12 to 13
+          borderSide: const BorderSide(color: Colors.red, width: 1.5), // Reduced thickness
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.only(
+          top: 10,
+          right: 16,
+          bottom: 10,
+          left: 16,
+        ), // Changed to match PersonalDetailsWidget padding
         suffixIcon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
       ),
       style: const TextStyle(

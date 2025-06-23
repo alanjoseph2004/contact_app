@@ -28,6 +28,11 @@ class PersonalDetailsWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     
+    // Set default +91 if country code is empty
+    if (countryCodeController.text.isEmpty) {
+      countryCodeController.text = '+91';
+    }
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -126,7 +131,7 @@ class PersonalDetailsWidget extends StatelessWidget {
                 height: 49,
                 child: _buildTextField(
                   controller: countryCodeController,
-                  labelText: '+91',
+                  labelText: 'Country Code*',
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Required';
@@ -226,23 +231,23 @@ class PersonalDetailsWidget extends StatelessWidget {
         fillColor: const Color(0xFFF5F5F5),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(13),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 0.5), // Reduced thickness
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(13),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 0.5), // Reduced thickness
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(13),
-          borderSide: const BorderSide(color: Color(0xFF4285F4), width: 2),
+          borderSide: const BorderSide(color: Color(0xFF4285F4), width: 1.5), // Reduced thickness
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(13),
-          borderSide: const BorderSide(color: Colors.red, width: 1),
+          borderSide: const BorderSide(color: Colors.red, width: 0.5), // Reduced thickness
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(13),
-          borderSide: const BorderSide(color: Colors.red, width: 2),
+          borderSide: const BorderSide(color: Colors.red, width: 1.5), // Reduced thickness
         ),
         contentPadding: const EdgeInsets.only(
           top: 10,

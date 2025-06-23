@@ -104,6 +104,11 @@ class NewPrimaryContactUI extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Initialize country code with +91 if empty
+    if (countryCodeController.text.isEmpty) {
+      countryCodeController.text = '+91';
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFFFFFFF),
       appBar: AppBar(
@@ -167,86 +172,98 @@ class NewPrimaryContactUI extends StatelessWidget {
                           const SizedBox(height: 16),
 
                           // Connection Dropdown
-                          FormUtils.buildDropdownField<int?>(
-                            value: selectedConnection,
-                            labelText: 'Connection *',
-                            items: connections.map((connection) {
-                              return DropdownMenuItem<int?>(
-                                value: connection['id'],
-                                child: Text(connection['name']),
-                              );
-                            }).toList(),
-                            onChanged: onConnectionChanged,
-                            validator: (value) {
-                              if (value == null) {
-                                return 'Please select a connection';
-                              }
-                              return null;
-                            },
+                          SizedBox(
+                            height: 49,
+                            child: FormUtils.buildDropdownField<int?>(
+                              value: selectedConnection,
+                              labelText: 'Connection *',
+                              items: connections.map((connection) {
+                                return DropdownMenuItem<int?>(
+                                  value: connection['id'],
+                                  child: Text(connection['name']),
+                                );
+                              }).toList(),
+                              onChanged: onConnectionChanged,
+                              validator: (value) {
+                                if (value == null) {
+                                  return 'Please select a connection';
+                                }
+                                return null;
+                              },
+                            ),
                           ),
                           const SizedBox(height: 16),
 
                           // Priority Dropdown
-                          FormUtils.buildDropdownField<int?>(
-                            value: selectedPriority,
-                            labelText: 'Priority *',
-                            items: priorityLevels.map((priority) {
-                              return DropdownMenuItem<int?>(
-                                value: priority,
-                                child: Text('Priority $priority'),
-                              );
-                            }).toList(),
-                            onChanged: onPriorityChanged,
-                            validator: (value) {
-                              if (value == null) {
-                                return 'Please select a priority';
-                              }
-                              return null;
-                            },
+                          SizedBox(
+                            height: 49,
+                            child: FormUtils.buildDropdownField<int?>(
+                              value: selectedPriority,
+                              labelText: 'Priority *',
+                              items: priorityLevels.map((priority) {
+                                return DropdownMenuItem<int?>(
+                                  value: priority,
+                                  child: Text('Priority $priority'),
+                                );
+                              }).toList(),
+                              onChanged: onPriorityChanged,
+                              validator: (value) {
+                                if (value == null) {
+                                  return 'Please select a priority';
+                                }
+                                return null;
+                              },
+                            ),
                           ),
                           const SizedBox(height: 16),
 
                           // District Dropdown
-                          FormUtils.buildDropdownField<int?>(
-                            value: selectedDistrict,
-                            labelText: 'District *',
-                            items: districts.map((district) {
-                              return DropdownMenuItem<int?>(
-                                value: district['id'],
-                                child: Text(district['name']),
-                              );
-                            }).toList(),
-                            onChanged: onDistrictChanged,
-                            validator: (value) {
-                              if (value == null) {
-                                return 'Please select a district';
-                              }
-                              return null;
-                            },
+                          SizedBox(
+                            height: 49,
+                            child: FormUtils.buildDropdownField<int?>(
+                              value: selectedDistrict,
+                              labelText: 'District *',
+                              items: districts.map((district) {
+                                return DropdownMenuItem<int?>(
+                                  value: district['id'],
+                                  child: Text(district['name']),
+                                );
+                              }).toList(),
+                              onChanged: onDistrictChanged,
+                              validator: (value) {
+                                if (value == null) {
+                                  return 'Please select a district';
+                                }
+                                return null;
+                              },
+                            ),
                           ),
                           const SizedBox(height: 16),
 
                           // Assembly Constituency Dropdown
                           Stack(
                             children: [
-                              FormUtils.buildDropdownField<int?>(
-                                value: selectedAssemblyConstituency,
-                                labelText: 'Assembly Constituency *',
-                                items: assemblyConstituencies.map((constituency) {
-                                  return DropdownMenuItem<int?>(
-                                    value: constituency['id'],
-                                    child: Text(constituency['name']),
-                                  );
-                                }).toList(),
-                                onChanged: assemblyConstituencies.isEmpty || isLoadingAssemblyConstituencies
-                                    ? (value) {}
-                                    : onAssemblyConstituencyChanged,
-                                validator: (value) {
-                                  if (value == null) {
-                                    return 'Please select an assembly constituency';
-                                  }
-                                  return null;
-                                },
+                              SizedBox(
+                                height: 49,
+                                child: FormUtils.buildDropdownField<int?>(
+                                  value: selectedAssemblyConstituency,
+                                  labelText: 'Assembly Constituency *',
+                                  items: assemblyConstituencies.map((constituency) {
+                                    return DropdownMenuItem<int?>(
+                                      value: constituency['id'],
+                                      child: Text(constituency['name']),
+                                    );
+                                  }).toList(),
+                                  onChanged: assemblyConstituencies.isEmpty || isLoadingAssemblyConstituencies
+                                      ? (value) {}
+                                      : onAssemblyConstituencyChanged,
+                                  validator: (value) {
+                                    if (value == null) {
+                                      return 'Please select an assembly constituency';
+                                    }
+                                    return null;
+                                  },
+                                ),
                               ),
                               if (isLoadingAssemblyConstituencies)
                                 const Positioned(
@@ -265,16 +282,19 @@ class NewPrimaryContactUI extends StatelessWidget {
                           const SizedBox(height: 16),
 
                           // Parliamentary Constituency Dropdown (Optional)
-                          FormUtils.buildDropdownField<int?>(
-                            value: selectedParliamentaryConstituency,
-                            labelText: 'Parliamentary Constituency',
-                            items: parliamentaryConstituencies.map((constituency) {
-                              return DropdownMenuItem<int?>(
-                                value: constituency['id'],
-                                child: Text(constituency['name']),
-                              );
-                            }).toList(),
-                            onChanged: onParliamentaryConstituencyChanged,
+                          SizedBox(
+                            height: 49,
+                            child: FormUtils.buildDropdownField<int?>(
+                              value: selectedParliamentaryConstituency,
+                              labelText: 'Parliamentary Constituency',
+                              items: parliamentaryConstituencies.map((constituency) {
+                                return DropdownMenuItem<int?>(
+                                  value: constituency['id'],
+                                  child: Text(constituency['name']),
+                                );
+                              }).toList(),
+                              onChanged: onParliamentaryConstituencyChanged,
+                            ),
                           ),
                           const SizedBox(height: 32),
 
@@ -283,55 +303,70 @@ class NewPrimaryContactUI extends StatelessWidget {
                           const SizedBox(height: 16),
 
                           // House Name
-                          FormUtils.buildTextField(
-                            controller: houseNameController,
-                            labelText: 'House Name',
-                            keyboardType: TextInputType.text,
+                          SizedBox(
+                            height: 49,
+                            child: FormUtils.buildTextField(
+                              controller: houseNameController,
+                              labelText: 'House Name',
+                              keyboardType: TextInputType.text,
+                            ),
                           ),
                           const SizedBox(height: 16),
 
                           // House Number
-                          FormUtils.buildTextField(
-                            controller: houseNumberController,
-                            labelText: 'House Number',
-                            keyboardType: TextInputType.number,
+                          SizedBox(
+                            height: 49,
+                            child: FormUtils.buildTextField(
+                              controller: houseNumberController,
+                              labelText: 'House Number',
+                              keyboardType: TextInputType.number,
+                            ),
                           ),
                           const SizedBox(height: 16),
 
                           // City
-                          FormUtils.buildTextField(
-                            controller: cityController,
-                            labelText: 'City',
-                            keyboardType: TextInputType.text,
+                          SizedBox(
+                            height: 49,
+                            child: FormUtils.buildTextField(
+                              controller: cityController,
+                              labelText: 'City',
+                              keyboardType: TextInputType.text,
+                            ),
                           ),
                           const SizedBox(height: 16),
 
                           // Post Office
-                          FormUtils.buildTextField(
-                            controller: postOfficeController,
-                            labelText: 'Post Office',
-                            keyboardType: TextInputType.text,
+                          SizedBox(
+                            height: 49,
+                            child: FormUtils.buildTextField(
+                              controller: postOfficeController,
+                              labelText: 'Post Office',
+                              keyboardType: TextInputType.text,
+                            ),
                           ),
                           const SizedBox(height: 16),
 
                           // Pin Code
-                          FormUtils.buildTextField(
-                            controller: pinCodeController,
-                            labelText: 'Pin Code',
-                            keyboardType: TextInputType.number,
-                            validator: (value) {
-                              if (value != null && value.isNotEmpty) {
-                                if (value.length != 6 || !RegExp(r'^\d{6}$').hasMatch(value)) {
-                                  return 'Pin code must be 6 digits';
+                          SizedBox(
+                            height: 49,
+                            child: FormUtils.buildTextField(
+                              controller: pinCodeController,
+                              labelText: 'Pin Code',
+                              keyboardType: TextInputType.number,
+                              validator: (value) {
+                                if (value != null && value.isNotEmpty) {
+                                  if (value.length != 6 || !RegExp(r'^\d{6}$').hasMatch(value)) {
+                                    return 'Pin code must be 6 digits';
+                                  }
                                 }
-                              }
-                              return null;
-                            },
+                                return null;
+                              },
+                            ),
                           ),
                           const SizedBox(height: 32),
 
                           // Tags Section - Using AddTagsWidget
-                          AddTagsWidget(
+                                                    AddTagsWidget(
                             tagCategories: tagCategories,
                             availableTagNames: availableTagNames,
                             selectedTagCategory: selectedTagCategory,
