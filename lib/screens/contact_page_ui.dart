@@ -503,12 +503,12 @@ class _ContactsPageState extends State<ContactsPage> {
           _loadContacts();
         });
       } else if (value == 'bulk') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const BulkContactsUploadPage()),
-        ).then((_) {
-          _loadContacts();
-        });
+        // Navigator.push(
+        //   context,
+        //   MaterialPageRoute(builder: (context) => const BulkContactsUploadPage()),
+        // ).then((_) {
+        //   _loadContacts();
+        // });
       }
     });
   }
