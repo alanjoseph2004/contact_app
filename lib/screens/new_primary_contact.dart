@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'new_primary_contact_ui.dart';
 import '../services/new_primary_contact_service.dart';
 
-
 class NewPrimaryContactPage extends StatefulWidget {
   const NewPrimaryContactPage({super.key});
 
@@ -24,26 +23,30 @@ class _NewPrimaryContactPageState extends State<NewPrimaryContactPage> {
   final TextEditingController _countryCodeController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
-  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _houseNameController = TextEditingController();
+  final TextEditingController _houseNumberController = TextEditingController();
+  final TextEditingController _cityController = TextEditingController();
+  final TextEditingController _postOfficeController = TextEditingController();
+  final TextEditingController _pinCodeController = TextEditingController();
 
   // API data lists
   List<Map<String, dynamic>> _connections = [];
-  List<Map<String, dynamic>> _constituencies = [];
+  List<Map<String, dynamic>> _districts = [];
+  List<Map<String, dynamic>> _assemblyConstituencies = [];
+  List<Map<String, dynamic>> _parliamentaryConstituencies = [];
   
   // Tag data structure
   List<Map<String, dynamic>> _tagCategories = [];
-  List<Map<String, dynamic>> _availableTagNames = []; // Available tag names for selected category
+  List<Map<String, dynamic>> _availableTagNames = [];
   
   // Selected values
   int? _selectedConnection;
   int _selectedPriority = 5;
-  int? _selectedCity;
-  int? _selectedConstituency;
+  int? _selectedDistrict;
+  int? _selectedAssemblyConstituency;
+  int? _selectedParliamentaryConstituency;
   int? _selectedTagCategory;
   int? _selectedTagName;
-
-  // Available cities based on selected constituency
-  List<Map<String, dynamic>> _availableCities = [];
 
   final List<int> _priorityLevels = List.generate(5, (index) => index + 1);
 
@@ -52,6 +55,7 @@ class _NewPrimaryContactPageState extends State<NewPrimaryContactPage> {
 
   bool _isLoading = false;
   bool _isInitialLoading = true;
+  bool _isLoadingAssemblyConstituencies = false;
   String? _errorMessage;
 
   @override
@@ -70,14 +74,16 @@ class _NewPrimaryContactPageState extends State<NewPrimaryContactPage> {
     try {
       final results = await Future.wait([
         _contactService.fetchConnections(),
-        _contactService.fetchConstituencies(),
+        _contactService.fetchDistricts(),
+        _contactService.fetchParliamentaryConstituencies(),
         _contactService.fetchTagData(),
       ]);
 
       setState(() {
         _connections = results[0];
-        _constituencies = results[1];
-        _tagCategories = results[2];
+        _districts = results[1];
+        _parliamentaryConstituencies = results[2];
+        _tagCategories = results[3];
         
         // Set default connection if available
         if (_connections.isNotEmpty) {
@@ -95,22 +101,33 @@ class _NewPrimaryContactPageState extends State<NewPrimaryContactPage> {
     }
   }
 
-  // Update available cities when constituency is selected
-  void _updateAvailableCities() {
-    if (_selectedConstituency != null) {
-      final constituency = _constituencies.firstWhere(
-        (c) => c['id'] == _selectedConstituency,
-        orElse: () => {'cities': []},
-      );
-      
+  // Update available assembly constituencies when district is selected
+  Future<void> _updateAvailableAssemblyConstituencies() async {
+    if (_selectedDistrict != null) {
       setState(() {
-        _availableCities = List<Map<String, dynamic>>.from(constituency['cities'] ?? []);
-        _selectedCity = null; // Reset selected city
+        _isLoadingAssemblyConstituencies = true;
+        _selectedAssemblyConstituency = null; // Reset selected assembly constituency
+        _assemblyConstituencies = [];
       });
+
+      try {
+        final constituencies = await _contactService.fetchAssemblyConstituencies(_selectedDistrict!);
+        setState(() {
+          _assemblyConstituencies = constituencies;
+        });
+      } catch (e) {
+        setState(() {
+          _errorMessage = 'Failed to load assembly constituencies: ${e.toString()}';
+        });
+      } finally {
+        setState(() {
+          _isLoadingAssemblyConstituencies = false;
+        });
+      }
     } else {
       setState(() {
-        _availableCities = [];
-        _selectedCity = null;
+        _assemblyConstituencies = [];
+        _selectedAssemblyConstituency = null;
       });
     }
   }
@@ -138,9 +155,11 @@ class _NewPrimaryContactPageState extends State<NewPrimaryContactPage> {
   Future<void> _saveContact() async {
     if (_formKey.currentState!.validate()) {
       // Validate required fields
-      if (_selectedCity == null || _selectedConstituency == null || _selectedConnection == null) {
+      if (_selectedDistrict == null || 
+          _selectedAssemblyConstituency == null || 
+          _selectedConnection == null) {
         setState(() {
-          _errorMessage = 'Please fill all required fields';
+          _errorMessage = 'Please fill all required fields (District, Assembly Constituency, Connection)';
         });
         return;
       }
@@ -158,9 +177,14 @@ class _NewPrimaryContactPageState extends State<NewPrimaryContactPage> {
           countryCode: _countryCodeController.text,
           phone: _phoneController.text,
           note: _noteController.text.isEmpty ? null : _noteController.text,
-          address: _addressController.text.isEmpty ? null : _addressController.text,
-          cityId: _selectedCity!,
-          constituencyId: _selectedConstituency!,
+          districtId: _selectedDistrict!,
+          assemblyConstituencyId: _selectedAssemblyConstituency!,
+          parliamentaryConstituencyId: _selectedParliamentaryConstituency,
+          houseName: _houseNameController.text.isEmpty ? null : _houseNameController.text,
+          houseNumber: _houseNumberController.text.isEmpty ? null : int.tryParse(_houseNumberController.text),
+          city: _cityController.text.isEmpty ? null : _cityController.text,
+          postOffice: _postOfficeController.text.isEmpty ? null : _postOfficeController.text,
+          pinCode: _pinCodeController.text.isEmpty ? null : _pinCodeController.text,
           priority: _selectedPriority,
           connectionId: _selectedConnection!,
           tagIds: _tags.map((tag) => tag['id'] as int).toList(),
@@ -247,6 +271,7 @@ class _NewPrimaryContactPageState extends State<NewPrimaryContactPage> {
       primaryColor: primaryColor,
       isInitialLoading: _isInitialLoading,
       isLoading: _isLoading,
+      isLoadingAssemblyConstituencies: _isLoadingAssemblyConstituencies,
       errorMessage: _errorMessage,
       firstNameController: _firstNameController,
       lastNameController: _lastNameController,
@@ -254,29 +279,36 @@ class _NewPrimaryContactPageState extends State<NewPrimaryContactPage> {
       countryCodeController: _countryCodeController,
       phoneController: _phoneController,
       noteController: _noteController,
-      addressController: _addressController,
+      houseNameController: _houseNameController,
+      houseNumberController: _houseNumberController,
+      cityController: _cityController,
+      postOfficeController: _postOfficeController,
+      pinCodeController: _pinCodeController,
       selectedConnection: _selectedConnection,
       selectedPriority: _selectedPriority,
-      selectedCity: _selectedCity,
-      selectedConstituency: _selectedConstituency,
+      selectedDistrict: _selectedDistrict,
+      selectedAssemblyConstituency: _selectedAssemblyConstituency,
+      selectedParliamentaryConstituency: _selectedParliamentaryConstituency,
       selectedTagCategory: _selectedTagCategory,
       selectedTagName: _selectedTagName,
       connections: _connections,
-      constituencies: _constituencies,
-      availableCities: _availableCities,
+      districts: _districts,
+      assemblyConstituencies: _assemblyConstituencies,
+      parliamentaryConstituencies: _parliamentaryConstituencies,
       tagCategories: _tagCategories,
       availableTagNames: _availableTagNames,
       priorityLevels: _priorityLevels,
       tags: _tags,
       onConnectionChanged: (value) => setState(() => _selectedConnection = value),
       onPriorityChanged: (value) => setState(() => _selectedPriority = value!),
-      onConstituencyChanged: (value) {
+      onDistrictChanged: (value) {
         setState(() {
-          _selectedConstituency = value;
-          _updateAvailableCities();
+          _selectedDistrict = value;
+          _updateAvailableAssemblyConstituencies();
         });
       },
-      onCityChanged: (value) => setState(() => _selectedCity = value),
+      onAssemblyConstituencyChanged: (value) => setState(() => _selectedAssemblyConstituency = value),
+      onParliamentaryConstituencyChanged: (value) => setState(() => _selectedParliamentaryConstituency = value),
       onTagCategoryChanged: (value) {
         setState(() {
           _selectedTagCategory = value;
@@ -299,7 +331,11 @@ class _NewPrimaryContactPageState extends State<NewPrimaryContactPage> {
     _countryCodeController.dispose();
     _phoneController.dispose();
     _noteController.dispose();
-    _addressController.dispose();
+    _houseNameController.dispose();
+    _houseNumberController.dispose();
+    _cityController.dispose();
+    _postOfficeController.dispose();
+    _pinCodeController.dispose();
     super.dispose();
   }
 }

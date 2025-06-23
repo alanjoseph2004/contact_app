@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/add_tags_widget.dart';
 import '../widgets/personal_details_widget.dart';
-import '../widgets/save_button_widget.dart'; // Import the new SaveButtonWidget
+import '../widgets/save_button_widget.dart';
 import '../utils/form_utils.dart';
 
 class NewPrimaryContactUI extends StatelessWidget {
@@ -9,6 +9,7 @@ class NewPrimaryContactUI extends StatelessWidget {
   final Color primaryColor;
   final bool isInitialLoading;
   final bool isLoading;
+  final bool isLoadingAssemblyConstituencies;
   final String? errorMessage;
   
   // Controllers
@@ -18,20 +19,26 @@ class NewPrimaryContactUI extends StatelessWidget {
   final TextEditingController countryCodeController;
   final TextEditingController phoneController;
   final TextEditingController noteController;
-  final TextEditingController addressController;
+  final TextEditingController houseNameController;
+  final TextEditingController houseNumberController;
+  final TextEditingController cityController;
+  final TextEditingController postOfficeController;
+  final TextEditingController pinCodeController;
   
   // Selected values
   final int? selectedConnection;
   final int selectedPriority;
-  final int? selectedCity;
-  final int? selectedConstituency;
+  final int? selectedDistrict;
+  final int? selectedAssemblyConstituency;
+  final int? selectedParliamentaryConstituency;
   final int? selectedTagCategory;
   final int? selectedTagName;
   
   // Data lists
   final List<Map<String, dynamic>> connections;
-  final List<Map<String, dynamic>> constituencies;
-  final List<Map<String, dynamic>> availableCities;
+  final List<Map<String, dynamic>> districts;
+  final List<Map<String, dynamic>> assemblyConstituencies;
+  final List<Map<String, dynamic>> parliamentaryConstituencies;
   final List<Map<String, dynamic>> tagCategories;
   final List<Map<String, dynamic>> availableTagNames;
   final List<int> priorityLevels;
@@ -40,8 +47,9 @@ class NewPrimaryContactUI extends StatelessWidget {
   // Callbacks
   final Function(int?) onConnectionChanged;
   final Function(int?) onPriorityChanged;
-  final Function(int?) onConstituencyChanged;
-  final Function(int?) onCityChanged;
+  final Function(int?) onDistrictChanged;
+  final Function(int?) onAssemblyConstituencyChanged;
+  final Function(int?) onParliamentaryConstituencyChanged;
   final Function(int?) onTagCategoryChanged;
   final Function(int?) onTagNameChanged;
   final Function() onAddTag;
@@ -54,6 +62,7 @@ class NewPrimaryContactUI extends StatelessWidget {
     required this.primaryColor,
     required this.isInitialLoading,
     required this.isLoading,
+    required this.isLoadingAssemblyConstituencies,
     required this.errorMessage,
     required this.firstNameController,
     required this.lastNameController,
@@ -61,24 +70,31 @@ class NewPrimaryContactUI extends StatelessWidget {
     required this.countryCodeController,
     required this.phoneController,
     required this.noteController,
-    required this.addressController,
+    required this.houseNameController,
+    required this.houseNumberController,
+    required this.cityController,
+    required this.postOfficeController,
+    required this.pinCodeController,
     required this.selectedConnection,
     required this.selectedPriority,
-    required this.selectedCity,
-    required this.selectedConstituency,
+    required this.selectedDistrict,
+    required this.selectedAssemblyConstituency,
+    required this.selectedParliamentaryConstituency,
     required this.selectedTagCategory,
     required this.selectedTagName,
     required this.connections,
-    required this.constituencies,
-    required this.availableCities,
+    required this.districts,
+    required this.assemblyConstituencies,
+    required this.parliamentaryConstituencies,
     required this.tagCategories,
     required this.availableTagNames,
     required this.priorityLevels,
     required this.tags,
     required this.onConnectionChanged,
     required this.onPriorityChanged,
-    required this.onConstituencyChanged,
-    required this.onCityChanged,
+    required this.onDistrictChanged,
+    required this.onAssemblyConstituencyChanged,
+    required this.onParliamentaryConstituencyChanged,
     required this.onTagCategoryChanged,
     required this.onTagNameChanged,
     required this.onAddTag,
@@ -132,7 +148,7 @@ class NewPrimaryContactUI extends StatelessWidget {
                           // Error message using FormUtils
                           FormUtils.buildErrorMessage(errorMessage),
                           
-                          // Personal Details Section - Now using PersonalDetailsWidget
+                          // Personal Details Section - Using PersonalDetailsWidget
                           PersonalDetailsWidget(
                             firstNameController: firstNameController,
                             lastNameController: lastNameController,
@@ -150,17 +166,57 @@ class NewPrimaryContactUI extends StatelessWidget {
                           FormUtils.buildSectionTitle('Other Details'),
                           const SizedBox(height: 16),
 
-                          // District Dropdown
+                          // Connection Dropdown
                           FormUtils.buildDropdownField<int?>(
-                            value: selectedConstituency,
-                            labelText: 'District',
-                            items: constituencies.map((constituency) {
+                            value: selectedConnection,
+                            labelText: 'Connection *',
+                            items: connections.map((connection) {
                               return DropdownMenuItem<int?>(
-                                value: constituency['id'],
-                                child: Text(constituency['name']),
+                                value: connection['id'],
+                                child: Text(connection['name']),
                               );
                             }).toList(),
-                            onChanged: onConstituencyChanged,
+                            onChanged: onConnectionChanged,
+                            validator: (value) {
+                              if (value == null) {
+                                return 'Please select a connection';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Priority Dropdown
+                          FormUtils.buildDropdownField<int?>(
+                            value: selectedPriority,
+                            labelText: 'Priority *',
+                            items: priorityLevels.map((priority) {
+                              return DropdownMenuItem<int?>(
+                                value: priority,
+                                child: Text('Priority $priority'),
+                              );
+                            }).toList(),
+                            onChanged: onPriorityChanged,
+                            validator: (value) {
+                              if (value == null) {
+                                return 'Please select a priority';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          // District Dropdown
+                          FormUtils.buildDropdownField<int?>(
+                            value: selectedDistrict,
+                            labelText: 'District *',
+                            items: districts.map((district) {
+                              return DropdownMenuItem<int?>(
+                                value: district['id'],
+                                child: Text(district['name']),
+                              );
+                            }).toList(),
+                            onChanged: onDistrictChanged,
                             validator: (value) {
                               if (value == null) {
                                 return 'Please select a district';
@@ -170,167 +226,158 @@ class NewPrimaryContactUI extends StatelessWidget {
                           ),
                           const SizedBox(height: 16),
 
-                          // Assembly Constituency
-                          FormUtils.buildDropdownField<int?>(
-                            value: selectedCity,
-                            labelText: 'Assembly Constituency',
-                            items: availableCities.map((city) {
-                              return DropdownMenuItem<int?>(
-                                value: city['id'],
-                                child: Text(city['name']),
-                              );
-                            }).toList(),
-                            onChanged: availableCities.isEmpty ? (value) {} : onCityChanged,
-                            validator: (value) {
-                              if (value == null) {
-                                return 'Please select a constituency';
-                              }
-                              return null;
-                            },
+                          // Assembly Constituency Dropdown
+                          Stack(
+                            children: [
+                              FormUtils.buildDropdownField<int?>(
+                                value: selectedAssemblyConstituency,
+                                labelText: 'Assembly Constituency *',
+                                items: assemblyConstituencies.map((constituency) {
+                                  return DropdownMenuItem<int?>(
+                                    value: constituency['id'],
+                                    child: Text(constituency['name']),
+                                  );
+                                }).toList(),
+                                onChanged: assemblyConstituencies.isEmpty || isLoadingAssemblyConstituencies
+                                    ? (value) {}
+                                    : onAssemblyConstituencyChanged,
+                                validator: (value) {
+                                  if (value == null) {
+                                    return 'Please select an assembly constituency';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              if (isLoadingAssemblyConstituencies)
+                                const Positioned(
+                                  right: 12,
+                                  top: 12,
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                           const SizedBox(height: 16),
 
-                          // Party Block
+                          // Parliamentary Constituency Dropdown (Optional)
                           FormUtils.buildDropdownField<int?>(
-                            value: null,
-                            labelText: 'Party Block',
-                            items: const [],
-                            onChanged: (value) {},
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Party Constituency
-                          FormUtils.buildDropdownField<int?>(
-                            value: null,
-                            labelText: 'Party Constituency',
-                            items: const [],
-                            onChanged: (value) {},
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Booth
-                          FormUtils.buildDropdownField<int?>(
-                            value: null,
-                            labelText: 'Booth',
-                            items: const [],
-                            onChanged: (value) {},
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Parliamentary Constituency
-                          FormUtils.buildDropdownField<int?>(
-                            value: null,
+                            value: selectedParliamentaryConstituency,
                             labelText: 'Parliamentary Constituency',
-                            items: const [],
-                            onChanged: (value) {},
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Local Body
-                          FormUtils.buildDropdownField<int?>(
-                            value: null,
-                            labelText: 'Local Body',
-                            items: const [],
-                            onChanged: (value) {},
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Ward
-                          FormUtils.buildDropdownField<int?>(
-                            value: null,
-                            labelText: 'Ward',
-                            items: const [],
-                            onChanged: (value) {},
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Priority
-                          FormUtils.buildDropdownField<int>(
-                            value: selectedPriority,
-                            labelText: 'Priority 5',
-                            items: priorityLevels.map((int priority) {
-                              return DropdownMenuItem<int>(
-                                value: priority,
-                                child: Text(priority.toString()),
+                            items: parliamentaryConstituencies.map((constituency) {
+                              return DropdownMenuItem<int?>(
+                                value: constituency['id'],
+                                child: Text(constituency['name']),
                               );
                             }).toList(),
-                            onChanged: onPriorityChanged,
+                            onChanged: onParliamentaryConstituencyChanged,
                           ),
                           const SizedBox(height: 32),
 
-                          // Residential Details Section
-                          FormUtils.buildSectionTitle('Residential Details'),
+                          // Address Details Section
+                          FormUtils.buildSectionTitle('Address Details'),
                           const SizedBox(height: 16),
 
                           // House Name
                           FormUtils.buildTextField(
-                            controller: addressController,
+                            controller: houseNameController,
                             labelText: 'House Name',
+                            keyboardType: TextInputType.text,
                           ),
                           const SizedBox(height: 16),
 
                           // House Number
                           FormUtils.buildTextField(
-                            controller: TextEditingController(),
+                            controller: houseNumberController,
                             labelText: 'House Number',
+                            keyboardType: TextInputType.number,
                           ),
                           const SizedBox(height: 16),
 
                           // City
                           FormUtils.buildTextField(
-                            controller: TextEditingController(),
+                            controller: cityController,
                             labelText: 'City',
+                            keyboardType: TextInputType.text,
                           ),
                           const SizedBox(height: 16),
 
                           // Post Office
                           FormUtils.buildTextField(
-                            controller: TextEditingController(),
+                            controller: postOfficeController,
                             labelText: 'Post Office',
+                            keyboardType: TextInputType.text,
                           ),
                           const SizedBox(height: 16),
 
                           // Pin Code
                           FormUtils.buildTextField(
-                            controller: TextEditingController(),
+                            controller: pinCodeController,
                             labelText: 'Pin Code',
                             keyboardType: TextInputType.number,
+                            validator: (value) {
+                              if (value != null && value.isNotEmpty) {
+                                if (value.length != 6 || !RegExp(r'^\d{6}$').hasMatch(value)) {
+                                  return 'Pin code must be 6 digits';
+                                }
+                              }
+                              return null;
+                            },
                           ),
                           const SizedBox(height: 32),
 
-                          // Tags Section
+                          // Tags Section - Using AddTagsWidget
                           AddTagsWidget(
-                            selectedTagCategory: selectedTagCategory,
-                            selectedTagName: selectedTagName,
                             tagCategories: tagCategories,
                             availableTagNames: availableTagNames,
+                            selectedTagCategory: selectedTagCategory,
+                            selectedTagName: selectedTagName,
                             tags: tags,
                             onTagCategoryChanged: onTagCategoryChanged,
                             onTagNameChanged: onTagNameChanged,
                             onAddTag: onAddTag,
                             onRemoveTag: onRemoveTag,
-                            sectionTitle: 'Add Tags',
-                            showSectionTitle: true,
                           ),
                           const SizedBox(height: 32),
 
-                          // Save Button - Now using SaveButtonWidget
+                          // Save Button - Using SaveButtonWidget
                           SaveButtonWidget(
-                            isLoading: isLoading,
                             onPressed: onSave,
+                            isLoading: isLoading,
                             buttonText: 'Save Contact',
                           ),
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 20),
                         ],
                       ),
                     ),
                   ),
                 ),
-                // Loading overlay using FormUtils
-                FormUtils.buildLoadingOverlay(
-                  message: 'Saving contact...',
-                  isVisible: isLoading,
-                ),
+                
+                // Loading overlay
+                if (isLoading)
+                  Container(
+                    color: Colors.black.withOpacity(0.3),
+                    child: const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                          Text(
+                            'Saving contact...',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
             ),
     );
