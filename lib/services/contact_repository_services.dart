@@ -44,15 +44,13 @@ class ContactRepositoryService {
   /// Fetch and cache primary contacts from API
   static Future<List<Contact>> _fetchAndCachePrimaryContacts() async {
     try {
-      final apiResponses = await ContactApiService.fetchPrimaryContacts();
+      // Fetch contacts from API (this returns List<Contact>)
+      final contacts = await ContactApiService.fetchPrimaryContacts();
       
-      // Cache the contacts using the method from ContactService
-      await ContactService.cacheApiPrimaryContacts(
-        apiResponses.map((contact) => contact.toJson()).toList(),
-      );
-      
-      // Convert API responses to Contact objects for return
-      final contacts = apiResponses;
+      // Convert to the raw API response format that cacheApiPrimaryContacts expects
+      // Since cacheApiPrimaryContacts expects List<Map<String, dynamic>>, we need to 
+      // bypass it and directly save the contacts
+      await ContactService.savePrimaryContacts(contacts);
       
       // Save timestamp for future reference
       await ContactCacheService.saveLastFetchTimestamp(ContactType.primary);
@@ -60,6 +58,7 @@ class ContactRepositoryService {
       
       return contacts;
     } catch (e) {
+      print('Error fetching primary contacts: $e');
       // Try to load from cache if API fails
       final cachedContacts = await ContactService.getPrimaryContactsFromStorage();
       if (cachedContacts.isNotEmpty) {
@@ -86,6 +85,7 @@ class ContactRepositoryService {
       // Return all contacts (don't filter out primary contacts here)
       return contacts;
     } catch (e) {
+      print('Error fetching all contacts: $e');
       // Try to load from cache if API fails
       final cachedContacts = await ContactService.getAllContactsFromStorage();
       if (cachedContacts.isNotEmpty) {

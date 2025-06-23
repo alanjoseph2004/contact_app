@@ -14,16 +14,24 @@ class ContactApiService {
 
   /// Fetch all primary contacts from API
   static Future<List<Contact>> fetchPrimaryContacts() async {
-    final response = await http.get(Uri.parse(_primaryContactsEndpoint));
-    
-    if (response.statusCode != 200) {
-      throw Exception('Failed to fetch primary contacts: ${response.statusCode}');
-    }
+    try {
+      final response = await http.get(Uri.parse(_primaryContactsEndpoint));
+      
+      print('Primary contacts response status: ${response.statusCode}');
+      print('Primary contacts response body: ${response.body.substring(0, min(500, response.body.length))}...');
+      
+      if (response.statusCode != 200) {
+        throw Exception('Failed to fetch primary contacts: ${response.statusCode}');
+      }
 
-    final Map<String, dynamic> data = json.decode(response.body);
-    final List<dynamic> results = data['results'];
-    
-    return results.map((contactData) => _buildPrimaryContactFromJson(contactData)).toList();
+      final Map<String, dynamic> data = json.decode(response.body);
+      final List<dynamic> results = data['results'] ?? [];
+      
+      return results.map((contactData) => _buildPrimaryContactFromJson(contactData)).toList();
+    } catch (e) {
+      print('Error in fetchPrimaryContacts: $e');
+      rethrow;
+    }
   }
 
   /// Fetch updated primary contacts using timed retrieval
@@ -106,115 +114,160 @@ class ContactApiService {
 
   /// Build primary contact from JSON data
   static Contact _buildPrimaryContactFromJson(Map<String, dynamic> contactData) {
-    final contactObj = contactData['contact'];
-    if (contactObj == null) {
-      throw Exception('Missing contact object in response');
+    try {
+      final contactObj = contactData['contact'];
+      if (contactObj == null) {
+        throw Exception('Missing contact object in response');
+      }
+      
+      // Handle tags properly - extract tag names or IDs
+      List<int>? tagList;
+      if (contactObj['tags'] != null && contactObj['tags'] is List) {
+        tagList = (contactObj['tags'] as List)
+            .where((tag) => tag is Map<String, dynamic>)
+            .map((tag) {
+              // Since the API returns tag objects with names, we'll use a hash of the name as ID
+              // or you can create a mapping system
+              final tagName = tag['tag_name'] as String?;
+              return tagName?.hashCode ?? 0;
+            })
+            .where((id) => id != 0)
+            .toList();
+      }
+      
+      // Handle referral details properly
+      Map<String, dynamic>? referralDetails;
+      if (contactData['connection'] != null && contactData['connection'] is Map) {
+        referralDetails = {
+          'connection_id': contactData['connection']['id'] ?? contactData['id'],
+          'connection': contactData['connection']['connection'],
+        };
+      }
+      
+      // Helper function to safely extract ID from nested objects
+      int? _extractIdFromNestedObject(dynamic obj) {
+        if (obj == null) return null;
+        if (obj is int) return obj;
+        if (obj is Map<String, dynamic>) {
+          return obj['id'] as int?;
+        }
+        return null;
+      }
+      
+      return Contact(
+        id: contactObj['id'] as int,
+        referredBy: _extractIdFromNestedObject(contactObj['referred_by']),
+        firstName: contactObj['first_name'] ?? '',
+        lastName: contactObj['last_name'],
+        email: contactObj['email'],
+        countryCode: contactObj['country_code'] ?? '',
+        phone: contactObj['phone'] ?? '',
+        note: contactObj['note'],
+        district: _extractIdFromNestedObject(contactObj['district']),
+        assemblyConstituency: _extractIdFromNestedObject(contactObj['assembly_constituency']),
+        partyBlock: _extractIdFromNestedObject(contactObj['party_block']),
+        partyConstituency: _extractIdFromNestedObject(contactObj['party_constituency']),
+        booth: _extractIdFromNestedObject(contactObj['booth']),
+        parliamentaryConstituency: _extractIdFromNestedObject(contactObj['parliamentary_constituency']),
+        localBody: _extractIdFromNestedObject(contactObj['local_body']),
+        ward: _extractIdFromNestedObject(contactObj['ward']),
+        houseName: contactObj['house_name'],
+        houseNumber: contactObj['house_number'] as int?,
+        city: contactObj['city'],
+        postOffice: contactObj['post_office'],
+        pinCode: contactObj['pin_code'],
+        tags: tagList,
+        isPrimaryContact: true,
+        avatarUrl: contactObj['avatar_url'],
+        hasMessages: false,
+        type: ContactType.primary,
+        priority: contactData['priority'] as int?,
+        connection: contactData['connection']?['connection'],
+        referralDetails: referralDetails,
+        primaryContactId: contactData['id'] as int?, // Use the primary contact ID from the root level
+      );
+    } catch (e) {
+      print('Error in _buildPrimaryContactFromJson: $e');
+      print('ContactData: $contactData');
+      rethrow;
     }
-    
-    // Handle tags properly - convert to list of integers
-    List<int>? tagList;
-    if (contactData['tags'] != null && contactData['tags'] is List) {
-      tagList = (contactData['tags'] as List)
-          .map((tag) => tag['id'] as int? ?? 0)
-          .where((id) => id > 0)
-          .toList();
-    }
-    
-    // Handle referral details properly
-    Map<String, dynamic>? referralDetails;
-    if (contactData['connection'] != null && contactData['connection'] is Map) {
-      referralDetails = {
-        'connection_id': contactData['connection']['id'],
-        'connection': contactData['connection']['connection'],
-      };
-    }
-    
-    return Contact(
-      id: contactObj['id'] as int,
-      referredBy: contactObj['referred_by'] as int?,
-      firstName: contactObj['first_name'] ?? '',
-      lastName: contactObj['last_name'],
-      email: contactObj['email'],
-      countryCode: contactObj['country_code'] ?? '',
-      phone: contactObj['phone'] ?? '',
-      note: contactObj['note'],
-      district: contactObj['district'] as int?,
-      assemblyConstituency: contactObj['assembly_constituency'] as int?,
-      partyBlock: contactObj['party_block'] as int?,
-      partyConstituency: contactObj['party_constituency'] as int?,
-      booth: contactObj['booth'] as int?,
-      parliamentaryConstituency: contactObj['parliamentary_constituency'] as int?,
-      localBody: contactObj['local_body'] as int?,
-      ward: contactObj['ward'] as int?,
-      houseName: contactObj['house_name'],
-      houseNumber: contactObj['house_number'] as int?,
-      city: contactObj['city'],
-      postOffice: contactObj['post_office'],
-      pinCode: contactObj['pin_code'],
-      tags: tagList,
-      isPrimaryContact: true,
-      avatarUrl: contactObj['avatar_url'],
-      hasMessages: false,
-      type: ContactType.primary,
-      priority: contactData['priority'] as int?,
-      connection: contactData['connection']?['connection'],
-      referralDetails: referralDetails,
-    );
   }
 
   /// Build all contact from JSON data
   static Contact _buildAllContactFromJson(Map<String, dynamic> contactData) {
-    // Handle tags properly - convert to list of integers
-    List<int>? tagList;
-    if (contactData['tags'] != null && contactData['tags'] is List) {
-      tagList = (contactData['tags'] as List)
-          .map((tag) => tag['id'] as int? ?? 0)
-          .where((id) => id > 0)
-          .toList();
+    try {
+      // Helper function to safely extract ID from nested objects
+      int? _extractIdFromNestedObject(dynamic obj) {
+        if (obj == null) return null;
+        if (obj is int) return obj;
+        if (obj is Map<String, dynamic>) {
+          return obj['id'] as int?;
+        }
+        return null;
+      }
+      
+      // Handle tags properly - extract tag names or IDs
+      List<int>? tagList;
+      if (contactData['tags'] != null && contactData['tags'] is List) {
+        tagList = (contactData['tags'] as List)
+            .where((tag) => tag is Map<String, dynamic>)
+            .map((tag) {
+              // Since the API returns tag objects with names, we'll use a hash of the name as ID
+              final tagName = tag['tag_name'] as String?;
+              return tagName?.hashCode ?? 0;
+            })
+            .where((id) => id != 0)
+            .toList();
+      }
+      
+      // Handle referral details properly
+      Map<String, dynamic>? referralDetails;
+      if (contactData['referred_by'] != null && contactData['referred_by'] is Map) {
+        final referredBy = contactData['referred_by'] as Map<String, dynamic>;
+        referralDetails = {
+          'referred_id': referredBy['id'],
+          'referred_first_name': referredBy['first_name'],
+          'referred_last_name': referredBy['last_name'],
+          'referred_country_code': referredBy['country_code'],
+          'referred_phone': referredBy['phone'],
+        };
+      }
+      
+      return Contact(
+        id: contactData['id'] as int,
+        referredBy: _extractIdFromNestedObject(contactData['referred_by']),
+        firstName: contactData['first_name'] ?? '',
+        lastName: contactData['last_name'],
+        email: contactData['email'],
+        countryCode: contactData['country_code'] ?? '',
+        phone: contactData['phone'] ?? '',
+        note: contactData['note'],
+        district: _extractIdFromNestedObject(contactData['district']),
+        assemblyConstituency: _extractIdFromNestedObject(contactData['assembly_constituency']),
+        partyBlock: _extractIdFromNestedObject(contactData['party_block']),
+        partyConstituency: _extractIdFromNestedObject(contactData['party_constituency']),
+        booth: _extractIdFromNestedObject(contactData['booth']),
+        parliamentaryConstituency: _extractIdFromNestedObject(contactData['parliamentary_constituency']),
+        localBody: _extractIdFromNestedObject(contactData['local_body']),
+        ward: _extractIdFromNestedObject(contactData['ward']),
+        houseName: contactData['house_name'],
+        houseNumber: contactData['house_number'] as int?,
+        city: contactData['city'],
+        postOffice: contactData['post_office'],
+        pinCode: contactData['pin_code'],
+        tags: tagList,
+        isPrimaryContact: contactData['is_primary_contact'] ?? false,
+        avatarUrl: contactData['avatar_url'],
+        hasMessages: false,
+        type: ContactType.all,
+        priority: null,
+        connection: null,
+        referralDetails: referralDetails,
+      );
+    } catch (e) {
+      print('Error in _buildAllContactFromJson: $e');
+      print('ContactData: $contactData');
+      rethrow;
     }
-    
-    // Handle referral details properly
-    Map<String, dynamic>? referralDetails;
-    if (contactData['referred_by'] != null && contactData['referred_by'] is Map) {
-      referralDetails = {
-        'referred_id': contactData['referred_by']['id'],
-        'referred_first_name': contactData['referred_by']['first_name'],
-        'referred_last_name': contactData['referred_by']['last_name'],
-        'referred_country_code': contactData['referred_by']['country_code'],
-        'referred_phone': contactData['referred_by']['phone'],
-      };
-    }
-    
-    return Contact(
-      id: contactData['id'] as int,
-      referredBy: contactData['referred_by']?['id'] as int?,
-      firstName: contactData['first_name'] ?? '',
-      lastName: contactData['last_name'],
-      email: contactData['email'],
-      countryCode: contactData['country_code'] ?? '',
-      phone: contactData['phone'] ?? '',
-      note: contactData['note'],
-      district: contactData['district'] as int?,
-      assemblyConstituency: contactData['assembly_constituency'] as int?,
-      partyBlock: contactData['party_block'] as int?,
-      partyConstituency: contactData['party_constituency'] as int?,
-      booth: contactData['booth'] as int?,
-      parliamentaryConstituency: contactData['parliamentary_constituency'] as int?,
-      localBody: contactData['local_body'] as int?,
-      ward: contactData['ward'] as int?,
-      houseName: contactData['house_name'],
-      houseNumber: contactData['house_number'] as int?,
-      city: contactData['city'],
-      postOffice: contactData['post_office'],
-      pinCode: contactData['pin_code'],
-      tags: tagList,
-      isPrimaryContact: contactData['is_primary_contact'] ?? false,
-      avatarUrl: contactData['avatar_url'],
-      hasMessages: false,
-      type: ContactType.all,
-      priority: null,
-      connection: null,
-      referralDetails: referralDetails,
-    );
   }
 }
