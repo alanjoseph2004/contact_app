@@ -41,11 +41,11 @@ class _NewAllContactPageState extends State<NewAllContactPage> {
   int? _selectedDistrict;
   int? _selectedAssemblyConstituency;
   int? _selectedParliamentaryConstituency;
-  int? _selectedPartyBlock;
-  int? _selectedPartyConstituency;
-  int? _selectedBooth;
-  int? _selectedLocalBody;
-  int? _selectedWard;
+  // int? _selectedPartyBlock;
+  // int? _selectedPartyConstituency;
+  // int? _selectedBooth;
+  // int? _selectedLocalBody;
+  // int? _selectedWard;
   int? _selectedTagCategory;
   int? _selectedTagName;
   List<int> _selectedTagIds = [];
@@ -260,12 +260,12 @@ class _NewAllContactPageState extends State<NewAllContactPage> {
           note: _noteController.text.isEmpty ? null : _noteController.text,
           districtId: _selectedDistrict!,
           assemblyConstituencyId: _selectedAssemblyConstituency!,
-          partyBlockId: _selectedPartyBlock,
-          partyConstituencyId: _selectedPartyConstituency,
-          boothId: _selectedBooth,
+          // partyBlockId: _selectedPartyBlock,
+          // partyConstituencyId: _selectedPartyConstituency,
+          // boothId: _selectedBooth,
           parliamentaryConstituencyId: _selectedParliamentaryConstituency,
-          localBodyId: _selectedLocalBody,
-          wardId: _selectedWard,
+          // localBodyId: _selectedLocalBody,
+          // wardId: _selectedWard,
           houseName: _houseNameController.text.isEmpty ? null : _houseNameController.text,
           houseNumber: _houseNumberController.text.isEmpty ? null : int.tryParse(_houseNumberController.text),
           city: _cityController.text.isEmpty ? null : _cityController.text,
@@ -328,11 +328,11 @@ class _NewAllContactPageState extends State<NewAllContactPage> {
       selectedDistrict: _selectedDistrict,
       selectedAssemblyConstituency: _selectedAssemblyConstituency,
       selectedParliamentaryConstituency: _selectedParliamentaryConstituency,
-      selectedPartyBlock: _selectedPartyBlock,
-      selectedPartyConstituency: _selectedPartyConstituency,
-      selectedBooth: _selectedBooth,
-      selectedLocalBody: _selectedLocalBody,
-      selectedWard: _selectedWard,
+      // selectedPartyBlock: _selectedPartyBlock,
+      // selectedPartyConstituency: _selectedPartyConstituency,
+      // selectedBooth: _selectedBooth,
+      // selectedLocalBody: _selectedLocalBody,
+      // selectedWard: _selectedWard,
       selectedTagCategory: _selectedTagCategory,
       selectedTagName: _selectedTagName,
       selectedTagIds: _selectedTagIds,
@@ -351,11 +351,11 @@ class _NewAllContactPageState extends State<NewAllContactPage> {
       },
       onAssemblyConstituencyChanged: (value) => setState(() => _selectedAssemblyConstituency = value),
       onParliamentaryConstituencyChanged: (value) => setState(() => _selectedParliamentaryConstituency = value),
-      onPartyBlockChanged: (value) => setState(() => _selectedPartyBlock = value),
-      onPartyConstituencyChanged: (value) => setState(() => _selectedPartyConstituency = value),
-      onBoothChanged: (value) => setState(() => _selectedBooth = value),
-      onLocalBodyChanged: (value) => setState(() => _selectedLocalBody = value),
-      onWardChanged: (value) => setState(() => _selectedWard = value),
+      // onPartyBlockChanged: (value) => setState(() => _selectedPartyBlock = value),
+      // onPartyConstituencyChanged: (value) => setState(() => _selectedPartyConstituency = value),
+      // onBoothChanged: (value) => setState(() => _selectedBooth = value),
+      // onLocalBodyChanged: (value) => setState(() => _selectedLocalBody = value),
+      // onWardChanged: (value) => setState(() => _selectedWard = value),
       onTagCategoryChanged: (value) {
         setState(() {
           _selectedTagCategory = value;

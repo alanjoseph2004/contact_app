@@ -29,11 +29,11 @@ class NewAllContactUI extends StatelessWidget {
   final int? selectedDistrict;
   final int? selectedAssemblyConstituency;
   final int? selectedParliamentaryConstituency;
-  final int? selectedPartyBlock;
-  final int? selectedPartyConstituency;
-  final int? selectedBooth;
-  final int? selectedLocalBody;
-  final int? selectedWard;
+  // final int? selectedPartyBlock;
+  // final int? selectedPartyConstituency;
+  // final int? selectedBooth;
+  // final int? selectedLocalBody;
+  // final int? selectedWard;
   final int? selectedTagCategory;
   final int? selectedTagName;
   final List<int> selectedTagIds;
@@ -51,11 +51,11 @@ class NewAllContactUI extends StatelessWidget {
   final Function(int?) onDistrictChanged;
   final Function(int?) onAssemblyConstituencyChanged;
   final Function(int?) onParliamentaryConstituencyChanged;
-  final Function(int?) onPartyBlockChanged;
-  final Function(int?) onPartyConstituencyChanged;
-  final Function(int?) onBoothChanged;
-  final Function(int?) onLocalBodyChanged;
-  final Function(int?) onWardChanged;
+  // final Function(int?) onPartyBlockChanged;
+  // final Function(int?) onPartyConstituencyChanged;
+  // final Function(int?) onBoothChanged;
+  // final Function(int?) onLocalBodyChanged;
+  // final Function(int?) onWardChanged;
   final Function(int?) onTagCategoryChanged;
   final Function(int?) onTagNameChanged;
   final VoidCallback onAddTag;
@@ -85,11 +85,11 @@ class NewAllContactUI extends StatelessWidget {
     required this.selectedDistrict,
     required this.selectedAssemblyConstituency,
     required this.selectedParliamentaryConstituency,
-    required this.selectedPartyBlock,
-    required this.selectedPartyConstituency,
-    required this.selectedBooth,
-    required this.selectedLocalBody,
-    required this.selectedWard,
+    // required this.selectedPartyBlock,
+    // required this.selectedPartyConstituency,
+    // required this.selectedBooth,
+    // required this.selectedLocalBody,
+    // required this.selectedWard,
     required this.selectedTagCategory,
     required this.selectedTagName,
     required this.selectedTagIds,
@@ -103,11 +103,11 @@ class NewAllContactUI extends StatelessWidget {
     required this.onDistrictChanged,
     required this.onAssemblyConstituencyChanged,
     required this.onParliamentaryConstituencyChanged,
-    required this.onPartyBlockChanged,
-    required this.onPartyConstituencyChanged,
-    required this.onBoothChanged,
-    required this.onLocalBodyChanged,
-    required this.onWardChanged,
+    // required this.onPartyBlockChanged,
+    // required this.onPartyConstituencyChanged,
+    // required this.onBoothChanged,
+    // required this.onLocalBodyChanged,
+    // required this.onWardChanged,
     required this.onTagCategoryChanged,
     required this.onTagNameChanged,
     required this.onAddTag,
@@ -310,7 +310,8 @@ class NewAllContactUI extends StatelessWidget {
                           ),
                           const SizedBox(height: 32),
                           
-                          // Political Information Section
+                          // Political Information Section - COMMENTED OUT
+                          /*
                           FormUtils.buildSectionTitle('Political Information'),
                           const SizedBox(height: 16),
                           
@@ -358,81 +359,27 @@ class NewAllContactUI extends StatelessWidget {
                             onChanged: (value) {}, // Disabled until you have the data
                           ),
                           const SizedBox(height: 32),
+                          */
 
-                          // Tags Section - Custom implementation to match your existing structure
-                          FormUtils.buildSectionTitle('Tags'),
-                          const SizedBox(height: 16),
-                          
-                          // Tag Category Dropdown
-                          FormUtils.buildDropdownField<int?>(
-                            value: selectedTagCategory,
-                            labelText: 'Tag Category',
-                            items: tagCategories.map((category) {
-                              return DropdownMenuItem<int?>(
-                                value: category['id'],
-                                child: Text(category['name'] ?? 'Unknown'),
-                              );
+                          // Tags Section - Using AddTagsWidget
+                          AddTagsWidget(
+                            selectedTagCategory: selectedTagCategory,
+                            selectedTagName: selectedTagName,
+                            tagCategories: tagCategories,
+                            availableTagNames: tags,
+                            tags: selectedTagIds.map((tagId) {
+                              return {
+                                'id': tagId,
+                                'name': getTagName(tagId),
+                              };
                             }).toList(),
-                            onChanged: onTagCategoryChanged,
+                            onTagCategoryChanged: onTagCategoryChanged,
+                            onTagNameChanged: onTagNameChanged,
+                            onAddTag: onAddTag,
+                            onRemoveTag: (tag) => onRemoveTag(tag['id']),
+                            sectionTitle: 'Tags',
+                            showSectionTitle: true,
                           ),
-                          const SizedBox(height: 16),
-                          
-                          // Tag Name Dropdown with Add Button
-                          Row(
-                            children: [
-                              Expanded(
-                                child: FormUtils.buildDropdownField<int?>(
-                                  value: selectedTagName,
-                                  labelText: 'Tag Name',
-                                  items: tags.map((tag) {
-                                    return DropdownMenuItem<int?>(
-                                      value: tag['id'],
-                                      child: Text(tag['name'] ?? 'Unknown'),
-                                    );
-                                  }).toList(),
-                                  onChanged: selectedTagCategory != null ? onTagNameChanged : (value) {},
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              ElevatedButton(
-                                onPressed: selectedTagName != null ? onAddTag : null,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: primaryColor,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                ),
-                                child: const Text('Add'),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          
-                          // Selected Tags Display
-                          if (selectedTagIds.isNotEmpty) ...[
-                            const Text(
-                              'Selected Tags:',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: selectedTagIds.map((tagId) {
-                                return Chip(
-                                  label: Text(getTagName(tagId)),
-                                  deleteIcon: const Icon(Icons.close, size: 18),
-                                  onDeleted: () => onRemoveTag(tagId),
-                                  backgroundColor: primaryColor.withOpacity(0.1),
-                                  labelStyle: TextStyle(color: primaryColor),
-                                  deleteIconColor: primaryColor,
-                                );
-                              }).toList(),
-                            ),
-                          ],
                           const SizedBox(height: 32),
 
                           // Additional Information Section
