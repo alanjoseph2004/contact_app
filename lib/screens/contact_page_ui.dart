@@ -392,7 +392,16 @@ class _ContactsPageState extends State<ContactsPage> {
             _loadContacts();
           });
         } else {
-          _showContactCreationOptions();
+          // Directly navigate to single contact creation for now
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const NewAllContactPage()),
+          ).then((_) {
+            _loadContacts();
+          });
+          
+          // Commented out the contact creation options menu since bulk is disabled
+          // _showContactCreationOptions();
         }
       },
       backgroundColor: _primaryBlue,
@@ -400,6 +409,8 @@ class _ContactsPageState extends State<ContactsPage> {
     );
   }
 
+  // Commented out the contact creation options method since bulk is disabled
+  /*
   void _showContactCreationOptions() {
     final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
     
@@ -512,6 +523,7 @@ class _ContactsPageState extends State<ContactsPage> {
       }
     });
   }
+  */
 
   // Build a simplified bottom bar with only Contacts
   Widget _buildBottomNavigationBar() {
