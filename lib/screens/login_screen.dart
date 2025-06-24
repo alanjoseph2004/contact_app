@@ -99,6 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: TextStyle(
                             fontSize: 34,
                             fontWeight: FontWeight.w900,
+                            fontFamily: 'Inter',
                             color: Color(0xDD122786),
                           ),
                         ),
@@ -108,19 +109,35 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: TextStyle(
                             color: Color.fromARGB(255, 58, 57, 57),
                             fontSize: 19,
+                            fontFamily: 'Inter',
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                         const SizedBox(height: 120),
-                        const Text("Username or email",
-                            style: TextStyle(
-                                color: Color(0xFF3A3939), fontSize: 18)),
+                        const Text(
+                          "Username or email",
+                          style: TextStyle(
+                            color: Color(0xFF3A3939),
+                            fontSize: 18,
+                            fontFamily: 'Inter',
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                         const SizedBox(height: 10),
                         TextFormField(
                           controller: _emailController,
+                          style: const TextStyle(
+                            fontFamily: 'Inter',
+                            fontWeight: FontWeight.w400,
+                            fontSize: 16,
+                          ),
                           decoration: InputDecoration(
                             hintText: 'Enter your username or email',
-                            hintStyle:
-                                TextStyle(color: Colors.grey.shade500),
+                            hintStyle: TextStyle(
+                              color: Colors.grey.shade500,
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w400,
+                            ),
                             filled: true,
                             fillColor: const Color(0xFFF5F5F5),
                             border: OutlineInputBorder(
@@ -135,17 +152,31 @@ class _LoginScreenState extends State<LoginScreen> {
                               : null,
                         ),
                         const SizedBox(height: 22),
-                        const Text("Password",
-                            style: TextStyle(
-                                color: Color(0xFF3A3939), fontSize: 18)),
+                        const Text(
+                          "Password",
+                          style: TextStyle(
+                            color: Color(0xFF3A3939),
+                            fontSize: 18,
+                            fontFamily: 'Inter',
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                         const SizedBox(height: 9),
                         TextFormField(
                           controller: _passwordController,
                           obscureText: true,
+                          style: const TextStyle(
+                            fontFamily: 'Inter',
+                            fontWeight: FontWeight.w400,
+                            fontSize: 16,
+                          ),
                           decoration: InputDecoration(
                             hintText: 'Enter your password',
-                            hintStyle:
-                                TextStyle(color: Colors.grey.shade500),
+                            hintStyle: TextStyle(
+                              color: Colors.grey.shade500,
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w400,
+                            ),
                             filled: true,
                             fillColor: const Color(0xFFF5F5F5),
                             border: OutlineInputBorder(
@@ -180,6 +211,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       color: Color(0xFF283593),
                                       fontWeight: FontWeight.w900,
                                       fontSize: 22,
+                                      fontFamily: 'Inter',
                                     ),
                                   ),
                           ),
