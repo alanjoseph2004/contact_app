@@ -135,6 +135,7 @@ class NewAllContactUI extends StatelessWidget {
             color: Colors.black,
             fontSize: 18,
             fontWeight: FontWeight.w600,
+            fontFamily: 'Inter',
           ),
         ),
       ),
@@ -145,7 +146,15 @@ class NewAllContactUI extends StatelessWidget {
                 children: [
                   CircularProgressIndicator(),
                   SizedBox(height: 16),
-                  Text('Loading data...'),
+                  Text(
+                    'Loading data...',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w400,
+                      fontSize: 16,
+                      color: Colors.black87,
+                    ),
+                  ),
                 ],
               ),
             )
@@ -173,7 +182,15 @@ class NewAllContactUI extends StatelessWidget {
                             items: primaryContacts.map((contact) {
                               return DropdownMenuItem<int?>(
                                 value: contact['id'],
-                                child: Text(contact['name'] ?? 'Unknown'),
+                                child: Text(
+                                  contact['name'] ?? 'Unknown',
+                                  style: const TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontWeight: FontWeight.w400,
+                                    fontSize: 16,
+                                    color: Colors.black87,
+                                  ),
+                                ),
                               );
                             }).toList(),
                             onChanged: onReferredByChanged,
@@ -211,7 +228,15 @@ class NewAllContactUI extends StatelessWidget {
                             items: districts.map((district) {
                               return DropdownMenuItem<int?>(
                                 value: district['id'],
-                                child: Text(district['name'] ?? 'Unknown'),
+                                child: Text(
+                                  district['name'] ?? 'Unknown',
+                                  style: const TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontWeight: FontWeight.w400,
+                                    fontSize: 16,
+                                    color: Colors.black87,
+                                  ),
+                                ),
                               );
                             }).toList(),
                             onChanged: onDistrictChanged,
@@ -231,7 +256,15 @@ class NewAllContactUI extends StatelessWidget {
                             items: assemblyConstituencies.map((constituency) {
                               return DropdownMenuItem<int?>(
                                 value: constituency['id'],
-                                child: Text(constituency['name'] ?? 'Unknown'),
+                                child: Text(
+                                  constituency['name'] ?? 'Unknown',
+                                  style: const TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontWeight: FontWeight.w400,
+                                    fontSize: 16,
+                                    color: Colors.black87,
+                                  ),
+                                ),
                               );
                             }).toList(),
                             onChanged: selectedDistrict != null ? onAssemblyConstituencyChanged : (value) {},
@@ -251,7 +284,15 @@ class NewAllContactUI extends StatelessWidget {
                             items: parliamentaryConstituencies.map((constituency) {
                               return DropdownMenuItem<int?>(
                                 value: constituency['id'],
-                                child: Text(constituency['name'] ?? 'Unknown'),
+                                child: Text(
+                                  constituency['name'] ?? 'Unknown',
+                                  style: const TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontWeight: FontWeight.w400,
+                                    fontSize: 16,
+                                    color: Colors.black87,
+                                  ),
+                                ),
                               );
                             }).toList(),
                             onChanged: onParliamentaryConstituencyChanged,
@@ -423,6 +464,8 @@ class NewAllContactUI extends StatelessWidget {
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                         ],

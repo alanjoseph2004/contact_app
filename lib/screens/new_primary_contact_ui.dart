@@ -126,6 +126,7 @@ class NewPrimaryContactUI extends StatelessWidget {
             color: Colors.black,
             fontSize: 18,
             fontWeight: FontWeight.w600,
+            fontFamily: 'Inter',
           ),
         ),
       ),
@@ -136,7 +137,13 @@ class NewPrimaryContactUI extends StatelessWidget {
                 children: [
                   CircularProgressIndicator(),
                   SizedBox(height: 16),
-                  Text('Loading data...'),
+                  Text(
+                    'Loading data...',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
                 ],
               ),
             )
@@ -180,7 +187,13 @@ class NewPrimaryContactUI extends StatelessWidget {
                               items: connections.map((connection) {
                                 return DropdownMenuItem<int?>(
                                   value: connection['id'],
-                                  child: Text(connection['name']),
+                                  child: Text(
+                                    connection['name'],
+                                    style: const TextStyle(
+                                      fontFamily: 'Inter',
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
                                 );
                               }).toList(),
                               onChanged: onConnectionChanged,
@@ -203,7 +216,13 @@ class NewPrimaryContactUI extends StatelessWidget {
                               items: priorityLevels.map((priority) {
                                 return DropdownMenuItem<int?>(
                                   value: priority,
-                                  child: Text('Priority $priority'),
+                                  child: Text(
+                                    'Priority $priority',
+                                    style: const TextStyle(
+                                      fontFamily: 'Inter',
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
                                 );
                               }).toList(),
                               onChanged: onPriorityChanged,
@@ -226,7 +245,13 @@ class NewPrimaryContactUI extends StatelessWidget {
                               items: districts.map((district) {
                                 return DropdownMenuItem<int?>(
                                   value: district['id'],
-                                  child: Text(district['name']),
+                                  child: Text(
+                                    district['name'],
+                                    style: const TextStyle(
+                                      fontFamily: 'Inter',
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
                                 );
                               }).toList(),
                               onChanged: onDistrictChanged,
@@ -251,7 +276,13 @@ class NewPrimaryContactUI extends StatelessWidget {
                                   items: assemblyConstituencies.map((constituency) {
                                     return DropdownMenuItem<int?>(
                                       value: constituency['id'],
-                                      child: Text(constituency['name']),
+                                      child: Text(
+                                        constituency['name'],
+                                        style: const TextStyle(
+                                          fontFamily: 'Inter',
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
                                     );
                                   }).toList(),
                                   onChanged: assemblyConstituencies.isEmpty || isLoadingAssemblyConstituencies
@@ -290,7 +321,13 @@ class NewPrimaryContactUI extends StatelessWidget {
                               items: parliamentaryConstituencies.map((constituency) {
                                 return DropdownMenuItem<int?>(
                                   value: constituency['id'],
-                                  child: Text(constituency['name']),
+                                  child: Text(
+                                    constituency['name'],
+                                    style: const TextStyle(
+                                      fontFamily: 'Inter',
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
                                 );
                               }).toList(),
                               onChanged: onParliamentaryConstituencyChanged,
@@ -366,7 +403,7 @@ class NewPrimaryContactUI extends StatelessWidget {
                           const SizedBox(height: 32),
 
                           // Tags Section - Using AddTagsWidget
-                                                    AddTagsWidget(
+                          AddTagsWidget(
                             tagCategories: tagCategories,
                             availableTagNames: availableTagNames,
                             selectedTagCategory: selectedTagCategory,
@@ -407,6 +444,8 @@ class NewPrimaryContactUI extends StatelessWidget {
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                         ],

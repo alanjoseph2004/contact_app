@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class FormUtils {
-  // Common text field styling - Updated to match PersonalDetailsWidget
+  // Common text field styling - Updated to use Inter font
   static Widget buildTextField({
     required TextEditingController controller,
     required String labelText,
@@ -19,6 +19,8 @@ class FormUtils {
       style: const TextStyle(
         fontSize: 16,
         color: Colors.black87,
+        fontFamily: 'Inter',
+        fontWeight: FontWeight.w400,
       ),
       decoration: InputDecoration(
         labelText: labelText,
@@ -26,30 +28,31 @@ class FormUtils {
           fontSize: 14,
           color: Colors.grey,
           fontWeight: FontWeight.w400,
+          fontFamily: 'Inter',
         ),
         filled: true,
-        fillColor: const Color(0xFFF5F5F5), // Updated to match PersonalDetailsWidget
+        fillColor: const Color(0xFFF5F5F5),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(13), // Updated to match PersonalDetailsWidget
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 0.5), // Reduced thickness
+          borderRadius: BorderRadius.circular(13),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 0.5),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(13),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 0.5), // Reduced thickness
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 0.5),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(13),
-          borderSide: const BorderSide(color: Color(0xFF4285F4), width: 1.5), // Reduced thickness
+          borderSide: const BorderSide(color: Color(0xFF4285F4), width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(13),
-          borderSide: const BorderSide(color: Colors.red, width: 0.5), // Reduced thickness
+          borderSide: const BorderSide(color: Colors.red, width: 0.5),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(13),
-          borderSide: const BorderSide(color: Colors.red, width: 1.5), // Reduced thickness
+          borderSide: const BorderSide(color: Colors.red, width: 1.5),
         ),
-        contentPadding: const EdgeInsets.only( // Updated to match PersonalDetailsWidget
+        contentPadding: const EdgeInsets.only(
           top: 10,
           right: 16,
           bottom: 10,
@@ -60,7 +63,7 @@ class FormUtils {
     );
   }
 
-  // Common dropdown field styling - Updated to match PersonalDetailsWidget
+  // Common dropdown field styling - Updated to use Inter font
   static Widget buildDropdownField<T>({
     required T? value,
     required String labelText,
@@ -77,30 +80,31 @@ class FormUtils {
           fontSize: 14,
           color: Colors.grey,
           fontWeight: FontWeight.w400,
+          fontFamily: 'Inter',
         ),
         filled: true,
-        fillColor: const Color(0xFFF5F5F5), // Updated to match PersonalDetailsWidget
+        fillColor: const Color(0xFFF5F5F5),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(13), // Updated to match PersonalDetailsWidget
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 0.5), // Reduced thickness
+          borderRadius: BorderRadius.circular(13),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 0.5),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(13),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 0.5), // Reduced thickness
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 0.5),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(13),
-          borderSide: const BorderSide(color: Color(0xFF4285F4), width: 1.5), // Reduced thickness
+          borderSide: const BorderSide(color: Color(0xFF4285F4), width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(13),
-          borderSide: const BorderSide(color: Colors.red, width: 0.5), // Reduced thickness
+          borderSide: const BorderSide(color: Colors.red, width: 0.5),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(13),
-          borderSide: const BorderSide(color: Colors.red, width: 1.5), // Reduced thickness
+          borderSide: const BorderSide(color: Colors.red, width: 1.5),
         ),
-        contentPadding: const EdgeInsets.only( // Updated to match PersonalDetailsWidget
+        contentPadding: const EdgeInsets.only(
           top: 10,
           right: 16,
           bottom: 10,
@@ -111,6 +115,8 @@ class FormUtils {
       style: const TextStyle(
         fontSize: 16,
         color: Colors.black87,
+        fontFamily: 'Inter',
+        fontWeight: FontWeight.w400,
       ),
       items: items,
       onChanged: onChanged,
@@ -118,7 +124,7 @@ class FormUtils {
     );
   }
 
-  // Common section title styling
+  // Common section title styling - Updated to use Inter font
   static Widget buildSectionTitle(String title) {
     return Text(
       title,
@@ -126,6 +132,7 @@ class FormUtils {
         fontSize: 16,
         fontWeight: FontWeight.w600,
         color: Colors.black87,
+        fontFamily: 'Inter',
       ),
     );
   }
@@ -182,7 +189,7 @@ class FormUtils {
     return null;
   }
 
-  // Common loading overlay
+  // Common loading overlay - Updated to use Inter font
   static Widget buildLoadingOverlay({
     required String message,
     required bool isVisible,
@@ -202,7 +209,11 @@ class FormUtils {
                 const SizedBox(height: 16),
                 Text(
                   message,
-                  style: const TextStyle(fontSize: 16),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
               ],
             ),
@@ -212,7 +223,7 @@ class FormUtils {
     );
   }
 
-  // Common error message display
+  // Common error message display - Updated to use Inter font
   static Widget buildErrorMessage(String? errorMessage) {
     if (errorMessage == null) return const SizedBox.shrink();
     
@@ -231,7 +242,11 @@ class FormUtils {
           Expanded(
             child: Text(
               errorMessage,
-              style: TextStyle(color: Colors.red.shade900),
+              style: TextStyle(
+                color: Colors.red.shade900,
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w400,
+              ),
             ),
           ),
         ],
