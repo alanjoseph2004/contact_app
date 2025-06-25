@@ -67,7 +67,7 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
     try {
       final primaryContactId = _contact.primaryContactId ?? _contact.id;
       final response = await http.get(
-        Uri.parse('http://51.21.152.136:8000/contact/primary-contact/$primaryContactId/'),
+        Uri.parse('https://contact.krisko.in/contact/primary-contact/$primaryContactId/'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -86,7 +86,7 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
   Future<void> _fetchAllContactData() async {
     try {
       final response = await http.get(
-        Uri.parse('http://51.21.152.136:8000/contact/contact/${_contact.id}/'),
+        Uri.parse('https://contact.krisko.in/contact/contact/${_contact.id}/'),
         headers: {
           'Content-Type': 'application/json',
         },
