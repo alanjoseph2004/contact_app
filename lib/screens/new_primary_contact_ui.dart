@@ -10,6 +10,8 @@ class NewPrimaryContactUI extends StatelessWidget {
   final bool isInitialLoading;
   final bool isLoading;
   final bool isLoadingAssemblyConstituencies;
+  final bool isLoadingPartyBlocks;
+  final bool isLoadingPartyConstituencies;
   final String? errorMessage;
   
   // Controllers
@@ -30,6 +32,8 @@ class NewPrimaryContactUI extends StatelessWidget {
   final int selectedPriority;
   final int? selectedDistrict;
   final int? selectedAssemblyConstituency;
+  final int? selectedPartyBlock;
+  final int? selectedPartyConstituency;
   final int? selectedParliamentaryConstituency;
   final int? selectedTagCategory;
   final int? selectedTagName;
@@ -38,6 +42,8 @@ class NewPrimaryContactUI extends StatelessWidget {
   final List<Map<String, dynamic>> connections;
   final List<Map<String, dynamic>> districts;
   final List<Map<String, dynamic>> assemblyConstituencies;
+  final List<Map<String, dynamic>> partyBlocks;
+  final List<Map<String, dynamic>> partyConstituencies;
   final List<Map<String, dynamic>> parliamentaryConstituencies;
   final List<Map<String, dynamic>> tagCategories;
   final List<Map<String, dynamic>> availableTagNames;
@@ -49,6 +55,8 @@ class NewPrimaryContactUI extends StatelessWidget {
   final Function(int?) onPriorityChanged;
   final Function(int?) onDistrictChanged;
   final Function(int?) onAssemblyConstituencyChanged;
+  final Function(int?) onPartyBlockChanged;
+  final Function(int?) onPartyConstituencyChanged;
   final Function(int?) onParliamentaryConstituencyChanged;
   final Function(int?) onTagCategoryChanged;
   final Function(int?) onTagNameChanged;
@@ -63,6 +71,8 @@ class NewPrimaryContactUI extends StatelessWidget {
     required this.isInitialLoading,
     required this.isLoading,
     required this.isLoadingAssemblyConstituencies,
+    required this.isLoadingPartyBlocks,
+    required this.isLoadingPartyConstituencies,
     required this.errorMessage,
     required this.firstNameController,
     required this.lastNameController,
@@ -79,12 +89,16 @@ class NewPrimaryContactUI extends StatelessWidget {
     required this.selectedPriority,
     required this.selectedDistrict,
     required this.selectedAssemblyConstituency,
+    required this.selectedPartyBlock,
+    required this.selectedPartyConstituency,
     required this.selectedParliamentaryConstituency,
     required this.selectedTagCategory,
     required this.selectedTagName,
     required this.connections,
     required this.districts,
     required this.assemblyConstituencies,
+    required this.partyBlocks,
+    required this.partyConstituencies,
     required this.parliamentaryConstituencies,
     required this.tagCategories,
     required this.availableTagNames,
@@ -94,6 +108,8 @@ class NewPrimaryContactUI extends StatelessWidget {
     required this.onPriorityChanged,
     required this.onDistrictChanged,
     required this.onAssemblyConstituencyChanged,
+    required this.onPartyBlockChanged,
+    required this.onPartyConstituencyChanged,
     required this.onParliamentaryConstituencyChanged,
     required this.onTagCategoryChanged,
     required this.onTagNameChanged,
@@ -234,6 +250,10 @@ class NewPrimaryContactUI extends StatelessWidget {
                               },
                             ),
                           ),
+                          const SizedBox(height: 32),
+
+                          // Location Details Section
+                          FormUtils.buildSectionTitle('Location Details'),
                           const SizedBox(height: 16),
 
                           // District Dropdown
@@ -312,17 +332,99 @@ class NewPrimaryContactUI extends StatelessWidget {
                           ),
                           const SizedBox(height: 16),
 
+                          // Party Block Dropdown (Optional)
+                          Stack(
+                            children: [
+                              SizedBox(
+                                height: 49,
+                                child: FormUtils.buildDropdownField<int?>(
+                                  value: selectedPartyBlock,
+                                  labelText: 'Party Block',
+                                  items: partyBlocks.map((partyBlock) {
+                                    return DropdownMenuItem<int?>(
+                                      value: partyBlock['id'],
+                                      child: Text(
+                                        partyBlock['name'],
+                                        style: const TextStyle(
+                                          fontFamily: 'Inter',
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                  onChanged: partyBlocks.isEmpty || isLoadingPartyBlocks
+                                      ? (value) {}
+                                      : onPartyBlockChanged,
+                                ),
+                              ),
+                              if (isLoadingPartyBlocks)
+                                const Positioned(
+                                  right: 12,
+                                  top: 12,
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Party Constituency Dropdown (Optional)
+                          Stack(
+                            children: [
+                              SizedBox(
+                                height: 49,
+                                child: FormUtils.buildDropdownField<int?>(
+                                  value: selectedPartyConstituency,
+                                  labelText: 'Party Constituency',
+                                  items: partyConstituencies.map((partyConstituency) {
+                                    return DropdownMenuItem<int?>(
+                                      value: partyConstituency['id'],
+                                      child: Text(
+                                        partyConstituency['name'],
+                                        style: const TextStyle(
+                                          fontFamily: 'Inter',
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                  onChanged: partyConstituencies.isEmpty || isLoadingPartyConstituencies
+                                      ? (value) {}
+                                      : onPartyConstituencyChanged,
+                                ),
+                              ),
+                              if (isLoadingPartyConstituencies)
+                                const Positioned(
+                                  right: 12,
+                                  top: 12,
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
                           // Parliamentary Constituency Dropdown (Optional)
                           SizedBox(
                             height: 49,
                             child: FormUtils.buildDropdownField<int?>(
                               value: selectedParliamentaryConstituency,
                               labelText: 'Parliamentary Constituency',
-                              items: parliamentaryConstituencies.map((constituency) {
+                              items: parliamentaryConstituencies.map((parConstituency) {
                                 return DropdownMenuItem<int?>(
-                                  value: constituency['id'],
+                                  value: parConstituency['id'],
                                   child: Text(
-                                    constituency['name'],
+                                    parConstituency['name'],
                                     style: const TextStyle(
                                       fontFamily: 'Inter',
                                       fontWeight: FontWeight.w400,
@@ -339,51 +441,50 @@ class NewPrimaryContactUI extends StatelessWidget {
                           FormUtils.buildSectionTitle('Address Details'),
                           const SizedBox(height: 16),
 
-                          // House Name
+                          // House Name Field
                           SizedBox(
                             height: 49,
                             child: FormUtils.buildTextField(
                               controller: houseNameController,
                               labelText: 'House Name',
-                              keyboardType: TextInputType.text,
+
                             ),
                           ),
                           const SizedBox(height: 16),
 
-                          // House Number
+                          // House Number Field
                           SizedBox(
                             height: 49,
                             child: FormUtils.buildTextField(
                               controller: houseNumberController,
                               labelText: 'House Number',
                               keyboardType: TextInputType.number,
+
                             ),
                           ),
                           const SizedBox(height: 16),
 
-                          // City
+                          // City Field
                           SizedBox(
                             height: 49,
                             child: FormUtils.buildTextField(
                               controller: cityController,
                               labelText: 'City',
-                              keyboardType: TextInputType.text,
                             ),
                           ),
                           const SizedBox(height: 16),
 
-                          // Post Office
+                          // Post Office Field
                           SizedBox(
                             height: 49,
                             child: FormUtils.buildTextField(
                               controller: postOfficeController,
                               labelText: 'Post Office',
-                              keyboardType: TextInputType.text,
                             ),
                           ),
                           const SizedBox(height: 16),
 
-                          // Pin Code
+                          // Pin Code Field
                           SizedBox(
                             height: 49,
                             child: FormUtils.buildTextField(
@@ -391,10 +492,8 @@ class NewPrimaryContactUI extends StatelessWidget {
                               labelText: 'Pin Code',
                               keyboardType: TextInputType.number,
                               validator: (value) {
-                                if (value != null && value.isNotEmpty) {
-                                  if (value.length != 6 || !RegExp(r'^\d{6}$').hasMatch(value)) {
-                                    return 'Pin code must be 6 digits';
-                                  }
+                                if (value != null && value.isNotEmpty && value.length != 6) {
+                                  return 'Pin code must be 6 digits';
                                 }
                                 return null;
                               },
@@ -402,7 +501,8 @@ class NewPrimaryContactUI extends StatelessWidget {
                           ),
                           const SizedBox(height: 32),
 
-                          // Tags Section - Using AddTagsWidget
+                          // Tags Section
+                          // Tags Section
                           AddTagsWidget(
                             tagCategories: tagCategories,
                             availableTagNames: availableTagNames,
@@ -413,16 +513,21 @@ class NewPrimaryContactUI extends StatelessWidget {
                             onTagNameChanged: onTagNameChanged,
                             onAddTag: onAddTag,
                             onRemoveTag: onRemoveTag,
+                            // Removed primaryColor - not a parameter of AddTagsWidget
+                            sectionTitle: 'Add Tags', // Optional: customize section title
+                            showSectionTitle: true, // Optional: show/hide section title
                           ),
                           const SizedBox(height: 32),
 
-                          // Save Button - Using SaveButtonWidget
+                          // Save Button
                           SaveButtonWidget(
-                            onPressed: onSave,
+                            onPressed: onSave, // Changed from onSave to onPressed
                             isLoading: isLoading,
-                            buttonText: 'Save Contact',
+                            backgroundColor: primaryColor, // Use backgroundColor instead of primaryColor
+                            buttonText: 'Save Contact', // Optional: customize button text
+                            loadingText: 'Saving...', // Optional: customize loading text
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 32),
                         ],
                       ),
                     ),
@@ -432,7 +537,7 @@ class NewPrimaryContactUI extends StatelessWidget {
                 // Loading overlay
                 if (isLoading)
                   Container(
-                    color: Colors.black.withOpacity(0.3),
+                    color: Colors.black26,
                     child: const Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -443,9 +548,8 @@ class NewPrimaryContactUI extends StatelessWidget {
                             'Saving contact...',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 16,
                               fontFamily: 'Inter',
-                              fontWeight: FontWeight.w400,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
