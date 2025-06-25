@@ -9,17 +9,17 @@ class ContactService {
   /// This will open the phone's dialer with the number pre-filled
   static Future<bool> makeCall(String phoneNumber) async {
     try {
-      // Clean the phone number (remove spaces, special characters except +)
-      final cleanNumber = _cleanPhoneNumber(phoneNumber);
+      // Get properly formatted dialable number
+      final dialableNumber = getDialableNumber(phoneNumber);
       
-      if (cleanNumber.isEmpty) {
+      if (dialableNumber.isEmpty || !isValidPhoneNumber(phoneNumber)) {
         if (kDebugMode) {
-          print('Invalid phone number: $phoneNumber');
+          print('Invalid phone number: $phoneNumber -> $dialableNumber');
         }
         return false;
       }
       
-      final Uri phoneUri = Uri(scheme: 'tel', path: cleanNumber);
+      final Uri phoneUri = Uri(scheme: 'tel', path: dialableNumber);
       
       if (kDebugMode) {
         print('Attempting to launch: $phoneUri');
@@ -48,29 +48,29 @@ class ContactService {
   /// If WhatsApp is not installed, it will open in browser
   static Future<bool> sendWhatsAppMessage(String phoneNumber, {String? message}) async {
     try {
-      // Clean the phone number and ensure it starts with country code
-      final cleanNumber = _cleanPhoneNumber(phoneNumber);
+      // Get properly formatted dialable number
+      final dialableNumber = getDialableNumber(phoneNumber);
       
-      if (cleanNumber.isEmpty) {
+      if (dialableNumber.isEmpty || !isValidPhoneNumber(phoneNumber)) {
         if (kDebugMode) {
-          print('Invalid phone number for WhatsApp: $phoneNumber');
+          print('Invalid phone number for WhatsApp: $phoneNumber -> $dialableNumber');
         }
         return false;
       }
       
-      // Ensure the number starts with country code (remove leading + if present)
-      String formattedNumber = cleanNumber;
-      if (formattedNumber.startsWith('+')) {
-        formattedNumber = formattedNumber.substring(1);
+      // Remove + for WhatsApp URL (WhatsApp expects numbers without +)
+      String whatsappNumber = dialableNumber;
+      if (whatsappNumber.startsWith('+')) {
+        whatsappNumber = whatsappNumber.substring(1);
       }
       
       // Create WhatsApp URL
       String whatsappUrl;
       if (message != null && message.isNotEmpty) {
         final encodedMessage = Uri.encodeComponent(message);
-        whatsappUrl = 'https://wa.me/$formattedNumber?text=$encodedMessage';
+        whatsappUrl = 'https://wa.me/$whatsappNumber?text=$encodedMessage';
       } else {
-        whatsappUrl = 'https://wa.me/$formattedNumber';
+        whatsappUrl = 'https://wa.me/$whatsappNumber';
       }
       
       final Uri whatsappUri = Uri.parse(whatsappUrl);
@@ -86,7 +86,7 @@ class ContactService {
         );
       } else {
         // Fallback: try to open WhatsApp app directly
-        final Uri fallbackUri = Uri.parse('whatsapp://send?phone=$formattedNumber${message != null ? '&text=${Uri.encodeComponent(message)}' : ''}');
+        final Uri fallbackUri = Uri.parse('whatsapp://send?phone=$whatsappNumber${message != null ? '&text=${Uri.encodeComponent(message)}' : ''}');
         
         if (await canLaunchUrl(fallbackUri)) {
           return await launchUrl(
@@ -326,11 +326,29 @@ class ContactService {
   
   /// Clean phone number by removing unwanted characters
   static String _cleanPhoneNumber(String phoneNumber) {
-    // Remove all characters except digits, +, and spaces
-    String cleaned = phoneNumber.replaceAll(RegExp(r'[^\d\+\s]'), '');
+    // Remove all characters except digits and +
+    String cleaned = phoneNumber.replaceAll(RegExp(r'[^\d\+]'), '');
     
-    // Remove extra spaces
-    cleaned = cleaned.replaceAll(RegExp(r'\s+'), '');
+    // Handle Indian numbers specifically
+    if (cleaned.length == 10 && !cleaned.startsWith('+')) {
+      // Add Indian country code for 10-digit numbers
+      cleaned = '+91$cleaned';
+    } else if (cleaned.length == 11 && cleaned.startsWith('91') && !cleaned.startsWith('+')) {
+      // Add + for 11-digit numbers starting with 91
+      cleaned = '+$cleaned';
+    } else if (cleaned.length == 12 && cleaned.startsWith('91') && !cleaned.startsWith('+')) {
+      // This might be a number with extra digit, remove leading 0 if present
+      if (cleaned.startsWith('910')) {
+        cleaned = '+91${cleaned.substring(3)}';
+      } else {
+        cleaned = '+$cleaned';
+      }
+    } else if (cleaned.length == 13 && cleaned.startsWith('+91')) {
+      // This might have extra digit, check for leading 0 after country code
+      if (cleaned.startsWith('+910')) {
+        cleaned = '+91${cleaned.substring(4)}';
+      }
+    }
     
     return cleaned;
   }
@@ -339,9 +357,16 @@ class ContactService {
   static bool isValidPhoneNumber(String phoneNumber) {
     final cleaned = _cleanPhoneNumber(phoneNumber);
     
-    // Basic validation: should have at least 10 digits
+    // Check if it's a valid Indian number format
+    if (cleaned.startsWith('+91')) {
+      final digits = cleaned.substring(3); // Remove +91
+      return digits.length == 10 && 
+             digits.startsWith(RegExp(r'[6-9]')); // Indian mobile numbers start with 6,7,8,9
+    }
+    
+    // For other international numbers, basic validation
     final digitsOnly = cleaned.replaceAll(RegExp(r'[^\d]'), '');
-    return digitsOnly.length >= 10;
+    return digitsOnly.length >= 10 && digitsOnly.length <= 15;
   }
   
   /// Validate email format
@@ -353,13 +378,43 @@ class ContactService {
   static String formatPhoneNumber(String phoneNumber, {String countryCode = '+91'}) {
     final cleaned = _cleanPhoneNumber(phoneNumber);
     
-    if (cleaned.startsWith('+')) {
+    // If already properly formatted, return as is
+    if (cleaned.startsWith('+91') && cleaned.length == 13) {
       return cleaned;
-    } else if (cleaned.startsWith(countryCode.substring(1))) {
+    }
+    
+    // Handle different input formats
+    if (cleaned.length == 10 && cleaned.startsWith(RegExp(r'[6-9]'))) {
+      return '+91$cleaned';
+    } else if (cleaned.startsWith('+')) {
+      return cleaned;
+    } else if (cleaned.startsWith('91') && cleaned.length == 12) {
       return '+$cleaned';
     } else {
-      return '$countryCode$cleaned';
+      return cleaned; // Return as is for international numbers
     }
+  }
+  
+  /// Get formatted phone number specifically for dialing
+  static String getDialableNumber(String phoneNumber) {
+    final cleaned = _cleanPhoneNumber(phoneNumber);
+    
+    if (kDebugMode) {
+      print('Original number: $phoneNumber');
+      print('Cleaned number: $cleaned');
+    }
+    
+    // For Indian numbers, ensure proper format
+    if (cleaned.startsWith('+91')) {
+      return cleaned;
+    } else if (cleaned.length == 10 && cleaned.startsWith(RegExp(r'[6-9]'))) {
+      return '+91$cleaned';
+    } else if (cleaned.startsWith('91') && cleaned.length == 12) {
+      return '+$cleaned';
+    }
+    
+    // For other formats, return cleaned version
+    return cleaned;
   }
   
   /// Check if a specific app is available
