@@ -527,47 +527,61 @@ class _ContactsPageState extends State<ContactsPage> {
 
   // Build a simplified bottom bar with only Contacts
   Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
-            spreadRadius: 0,
-            blurRadius: 10,
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Container(
-          height: 61,
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Column(
+  return Container(
+    decoration: BoxDecoration(
+      color: Colors.white,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.withOpacity(0.2),
+          spreadRadius: 0,
+          blurRadius: 10,
+        ),
+      ],
+    ),
+    child: SafeArea(
+      child: Container(
+        // Remove fixed height, let content determine height
+        constraints: const BoxConstraints(
+          minHeight: 56, // Minimum height for accessibility
+          maxHeight: 80, // Maximum height to prevent excessive growth
+        ),
+        padding: const EdgeInsets.symmetric(
+          vertical: 6, // Reduced padding
+          horizontal: 16,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible( // Wrap in Flexible to prevent overflow
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.contacts,
                     color: _primaryBlue,
+                    size: 20, // Explicit size for consistency
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Contacts',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      color: _primaryBlue,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
+                  const SizedBox(height: 2), // Reduced spacing
+                  Flexible( // Make text flexible
+                    child: Text(
+                      'Contacts',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        color: _primaryBlue,
+                        fontSize: 11, // Slightly smaller font
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis, // Handle long text
+                      maxLines: 1,
                     ),
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'contact_logic.dart';
+import '../services/contact_service.dart' as contact_service;
+import '../services/ui_service.dart';
 
 class DetailedContactPage extends StatefulWidget {
   final Contact contact;
@@ -228,6 +230,135 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
     return null;
   }
 
+  // Contact action methods
+  Future<void> _handleCall() async {
+    if (!contact_service.ContactService.isValidPhoneNumber(_contact.phoneNumber)) {
+      UIService.showErrorSnackBar(context, 'Invalid phone number');
+      return;
+    }
+    
+    final success = await contact_service.ContactService.makeCall(_contact.phoneNumber);
+    if (!success) {
+      UIService.showErrorSnackBar(context, 'Unable to make call');
+    }
+  }
+
+  Future<void> _handleMessage() async {
+    if (!contact_service.ContactService.isValidPhoneNumber(_contact.phoneNumber)) {
+      UIService.showErrorSnackBar(context, 'Invalid phone number');
+      return;
+    }
+
+    // Show options for different messaging apps
+    final option = await UIService.showOptionsBottomSheet<String>(
+      context,
+      title: 'Send Message',
+      options: [
+        const BottomSheetOption<String>(
+          icon: Icons.chat,
+          title: 'WhatsApp',
+          subtitle: 'Send message via WhatsApp',
+          value: 'whatsapp',
+          color: Color(0xFF25D366),
+        ),
+        const BottomSheetOption<String>(
+          icon: Icons.sms,
+          title: 'SMS',
+          subtitle: 'Send text message',
+          value: 'sms',
+          color: Color(0xFF4285F4),
+        ),
+      ],
+    );
+
+    if (option != null) {
+      bool success = false;
+      
+      if (option == 'whatsapp') {
+        success = await contact_service.ContactService.sendWhatsAppMessage(_contact.phoneNumber);
+        if (!success) {
+          UIService.showErrorSnackBar(context, 'Unable to open WhatsApp');
+        }
+      } else if (option == 'sms') {
+        // For SMS, we'll use the same URL launcher approach
+        success = await contact_service.ContactService.makeCall('sms:${_contact.phoneNumber}');
+        if (!success) {
+          UIService.showErrorSnackBar(context, 'Unable to open messaging app');
+        }
+      }
+    }
+  }
+
+  Future<void> _handleShare() async {
+    // Show options for different sharing methods
+    final option = await UIService.showOptionsBottomSheet<String>(
+      context,
+      title: 'Share Contact',
+      options: [
+        const BottomSheetOption<String>(
+          icon: Icons.share,
+          title: 'Share as Text',
+          subtitle: 'Share contact details as text',
+          value: 'text',
+          color: Color(0xFF4285F4),
+        ),
+        const BottomSheetOption<String>(
+          icon: Icons.contact_page,
+          title: 'Share as VCard',
+          subtitle: 'Share as contact file',
+          value: 'vcard',
+          color: Color(0xFF34A853),
+        ),
+        const BottomSheetOption<String>(
+          icon: Icons.copy,
+          title: 'Copy to Clipboard',
+          subtitle: 'Copy contact details',
+          value: 'copy',
+          color: Color(0xFFFF9800),
+        ),
+      ],
+    );
+
+    if (option != null) {
+      bool success = false;
+      
+      switch (option) {
+        case 'text':
+          success = await contact_service.ContactService.shareContact(
+            name: _contact.name,
+            phoneNumber: _contact.phoneNumber,
+            email: _contact.email,
+            address: _contact.fullAddress.isNotEmpty ? _contact.fullAddress : null,
+            note: _contact.note,
+          );
+          break;
+        case 'vcard':
+          success = await contact_service.ContactService.shareContactAsVCard(
+            name: _contact.name,
+            phoneNumber: _contact.phoneNumber,
+            email: _contact.email,
+            address: _contact.fullAddress.isNotEmpty ? _contact.fullAddress : null,
+            note: _contact.note,
+          );
+          break;
+        case 'copy':
+          success = await contact_service.ContactService.copyToClipboard(
+            name: _contact.name,
+            phoneNumber: _contact.phoneNumber,
+            email: _contact.email,
+          );
+          if (success) {
+            UIService.showSuccessSnackBar(context, 'Contact details copied to clipboard');
+          }
+          break;
+      }
+      
+      if (!success && option != 'copy') {
+        UIService.showErrorSnackBar(context, 'Unable to share contact');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -426,15 +557,9 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            _buildActionButton(Icons.phone, 'Call', () {
-                              // Implement call functionality
-                            }, isOutlined: false),
-                            _buildActionButton(Icons.message, 'Message', () {
-                              // Implement message functionality
-                            }, isOutlined: true),
-                            _buildActionButton(Icons.share, 'Share', () {
-                              // Implement share functionality
-                            }, isOutlined: true),
+                            _buildActionButton(Icons.phone, 'Call', _handleCall, isOutlined: false),
+                            _buildActionButton(Icons.message, 'Message', _handleMessage, isOutlined: true),
+                            _buildActionButton(Icons.share, 'Share', _handleShare, isOutlined: true),
                           ],
                         ),
                       ],
