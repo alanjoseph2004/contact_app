@@ -77,8 +77,8 @@ class NewAllContactService {
     }
   }
 
-  // Fetch assembly constituencies for a specific district
-  static Future<List<Map<String, dynamic>>> fetchAssemblyConstituencies(int districtId) async {
+  // Fetch assembly constituencies with party blocks for a specific district
+  static Future<Map<String, dynamic>> fetchDistrictWithConstituencies(int districtId) async {
     try {
       final headers = await _getHeaders();
       final response = await http.get(
@@ -88,19 +88,81 @@ class NewAllContactService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        
-        // Extract the assembly_constituencies array from the response
-        final List<dynamic> assemblyConstituencies = responseData['assembly_constituencies'] ?? [];
-        
-        return assemblyConstituencies.map((item) => {
-          'id': item['id'],
-          'name': item['assembly_constituency'] ?? item['name'], // Handle both possible field names
-        }).toList();
+        return responseData;
       } else {
-        throw Exception('Failed to load assembly constituencies: ${response.statusCode}');
+        throw Exception('Failed to load district constituencies: ${response.statusCode}');
       }
     } catch (e) {
+      throw Exception('Error fetching district constituencies: $e');
+    }
+  }
+
+  // Fetch assembly constituencies for a specific district (simplified list)
+  static Future<List<Map<String, dynamic>>> fetchAssemblyConstituencies(int districtId) async {
+    try {
+      final districtData = await fetchDistrictWithConstituencies(districtId);
+      final List<dynamic> assemblyConstituencies = districtData['assembly_constituencies'] ?? [];
+      
+      return assemblyConstituencies.map((item) => {
+        'id': item['id'],
+        'name': item['assembly_constituency'] ?? item['name'], // Handle both possible field names
+      }).toList();
+    } catch (e) {
       throw Exception('Error fetching assembly constituencies: $e');
+    }
+  }
+
+  // Fetch party blocks for a specific assembly constituency
+  static Future<List<Map<String, dynamic>>> fetchPartyBlocks(int districtId, int assemblyConstituencyId) async {
+    try {
+      final districtData = await fetchDistrictWithConstituencies(districtId);
+      final List<dynamic> assemblyConstituencies = districtData['assembly_constituencies'] ?? [];
+      
+      // Find the specific assembly constituency
+      final constituency = assemblyConstituencies.firstWhere(
+        (ac) => ac['id'] == assemblyConstituencyId,
+        orElse: () => <String, dynamic>{},
+      );
+      
+      if (constituency.isEmpty) {
+        return [];
+      }
+      
+      final List<dynamic> partyBlocks = constituency['party_blocks'] ?? [];
+      
+      return partyBlocks.map((item) => {
+        'id': item['id'],
+        'name': item['party_block'] ?? item['name'], // Handle both possible field names
+        'party_constituencies': item['party_constituencies'] ?? [],
+      }).toList();
+    } catch (e) {
+      throw Exception('Error fetching party blocks: $e');
+    }
+  }
+
+  // Fetch party constituencies for a specific party block
+  static Future<List<Map<String, dynamic>>> fetchPartyConstituencies(int districtId, int assemblyConstituencyId, int partyBlockId) async {
+    try {
+      final partyBlocks = await fetchPartyBlocks(districtId, assemblyConstituencyId);
+      
+      // Find the specific party block
+      final partyBlock = partyBlocks.firstWhere(
+        (pb) => pb['id'] == partyBlockId,
+        orElse: () => <String, dynamic>{},
+      );
+      
+      if (partyBlock.isEmpty) {
+        return [];
+      }
+      
+      final List<dynamic> partyConstituencies = partyBlock['party_constituencies'] ?? [];
+      
+      return partyConstituencies.map((item) => {
+        'id': item['id'],
+        'name': item['party_constituency'] ?? item['name'], // Handle both possible field names
+      }).toList();
+    } catch (e) {
+      throw Exception('Error fetching party constituencies: $e');
     }
   }
 
@@ -304,6 +366,38 @@ class NewAllContactService {
         'success': false,
         'message': 'An error occurred: ${e.toString()}',
       };
+    }
+  }
+
+  // Helper method to get all data for a district (including constituencies and party blocks)
+  static Future<Map<String, dynamic>> getCompleteDistrictData(int districtId) async {
+    try {
+      final districtData = await fetchDistrictWithConstituencies(districtId);
+      
+      // Process the data to make it easier to work with
+      final List<dynamic> assemblyConstituencies = districtData['assembly_constituencies'] ?? [];
+      
+      final processedConstituencies = assemblyConstituencies.map((ac) {
+        final List<dynamic> partyBlocks = ac['party_blocks'] ?? [];
+        
+        return {
+          'id': ac['id'],
+          'name': ac['assembly_constituency'],
+          'party_blocks': partyBlocks.map((pb) => {
+            'id': pb['id'],
+            'name': pb['party_block'],
+            'party_constituencies': pb['party_constituencies'] ?? [],
+          }).toList(),
+        };
+      }).toList();
+      
+      return {
+        'id': districtData['id'],
+        'district': districtData['district'],
+        'assembly_constituencies': processedConstituencies,
+      };
+    } catch (e) {
+      throw Exception('Error getting complete district data: $e');
     }
   }
 

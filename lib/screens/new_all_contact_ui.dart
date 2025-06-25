@@ -28,9 +28,9 @@ class NewAllContactUI extends StatelessWidget {
   final int? selectedReferredBy;
   final int? selectedDistrict;
   final int? selectedAssemblyConstituency;
+  final int? selectedPartyBlock;
+  final int? selectedPartyConstituency;
   final int? selectedParliamentaryConstituency;
-  // final int? selectedPartyBlock;
-  // final int? selectedPartyConstituency;
   // final int? selectedBooth;
   // final int? selectedLocalBody;
   // final int? selectedWard;
@@ -42,6 +42,8 @@ class NewAllContactUI extends StatelessWidget {
   final List<Map<String, dynamic>> primaryContacts;
   final List<Map<String, dynamic>> districts;
   final List<Map<String, dynamic>> assemblyConstituencies;
+  final List<Map<String, dynamic>> partyBlocks;
+  final List<Map<String, dynamic>> partyConstituencies;
   final List<Map<String, dynamic>> parliamentaryConstituencies;
   final List<Map<String, dynamic>> tagCategories;
   final List<Map<String, dynamic>> tags;
@@ -50,9 +52,9 @@ class NewAllContactUI extends StatelessWidget {
   final Function(int?) onReferredByChanged;
   final Function(int?) onDistrictChanged;
   final Function(int?) onAssemblyConstituencyChanged;
+  final Function(int?) onPartyBlockChanged;
+  final Function(int?) onPartyConstituencyChanged;
   final Function(int?) onParliamentaryConstituencyChanged;
-  // final Function(int?) onPartyBlockChanged;
-  // final Function(int?) onPartyConstituencyChanged;
   // final Function(int?) onBoothChanged;
   // final Function(int?) onLocalBodyChanged;
   // final Function(int?) onWardChanged;
@@ -84,9 +86,9 @@ class NewAllContactUI extends StatelessWidget {
     required this.selectedReferredBy,
     required this.selectedDistrict,
     required this.selectedAssemblyConstituency,
+    required this.selectedPartyBlock,
+    required this.selectedPartyConstituency,
     required this.selectedParliamentaryConstituency,
-    // required this.selectedPartyBlock,
-    // required this.selectedPartyConstituency,
     // required this.selectedBooth,
     // required this.selectedLocalBody,
     // required this.selectedWard,
@@ -96,15 +98,17 @@ class NewAllContactUI extends StatelessWidget {
     required this.primaryContacts,
     required this.districts,
     required this.assemblyConstituencies,
+    required this.partyBlocks,
+    required this.partyConstituencies,
     required this.parliamentaryConstituencies,
     required this.tagCategories,
     required this.tags,
     required this.onReferredByChanged,
     required this.onDistrictChanged,
     required this.onAssemblyConstituencyChanged,
+    required this.onPartyBlockChanged,
+    required this.onPartyConstituencyChanged,
     required this.onParliamentaryConstituencyChanged,
-    // required this.onPartyBlockChanged,
-    // required this.onPartyConstituencyChanged,
     // required this.onBoothChanged,
     // required this.onLocalBodyChanged,
     // required this.onWardChanged,
@@ -277,6 +281,50 @@ class NewAllContactUI extends StatelessWidget {
                           ),
                           const SizedBox(height: 16),
                           
+                          // Party Block Dropdown
+                          FormUtils.buildDropdownField<int?>(
+                            value: selectedPartyBlock,
+                            labelText: 'Party Block',
+                            items: partyBlocks.map((partyBlock) {
+                              return DropdownMenuItem<int?>(
+                                value: partyBlock['id'],
+                                child: Text(
+                                  partyBlock['name'] ?? 'Unknown',
+                                  style: const TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontWeight: FontWeight.w400,
+                                    fontSize: 16,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: selectedAssemblyConstituency != null ? onPartyBlockChanged : (value) {},
+                          ),
+                          const SizedBox(height: 16),
+                          
+                          // Party Constituency Dropdown
+                          FormUtils.buildDropdownField<int?>(
+                            value: selectedPartyConstituency,
+                            labelText: 'Party Constituency',
+                            items: partyConstituencies.map((partyConstituency) {
+                              return DropdownMenuItem<int?>(
+                                value: partyConstituency['id'],
+                                child: Text(
+                                  partyConstituency['name'] ?? 'Unknown',
+                                  style: const TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontWeight: FontWeight.w400,
+                                    fontSize: 16,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: selectedPartyBlock != null ? onPartyConstituencyChanged : (value) {},
+                          ),
+                          const SizedBox(height: 16),
+                          
                           // Parliamentary Constituency Dropdown
                           FormUtils.buildDropdownField<int?>(
                             value: selectedParliamentaryConstituency,
@@ -350,57 +398,6 @@ class NewAllContactUI extends StatelessWidget {
                             },
                           ),
                           const SizedBox(height: 32),
-                          
-                          // Political Information Section - COMMENTED OUT
-                          /*
-                          FormUtils.buildSectionTitle('Political Information'),
-                          const SizedBox(height: 16),
-                          
-                          // Party Block Dropdown (placeholder)
-                          FormUtils.buildDropdownField<int?>(
-                            value: selectedPartyBlock,
-                            labelText: 'Party Block',
-                            items: const [], // Add actual data here later
-                            onChanged: (value) {}, // Disabled until you have the data
-                          ),
-                          const SizedBox(height: 16),
-                          
-                          // Party Constituency Dropdown (placeholder)
-                          FormUtils.buildDropdownField<int?>(
-                            value: selectedPartyConstituency,
-                            labelText: 'Party Constituency',
-                            items: const [], // Add actual data here later
-                            onChanged: (value) {}, // Disabled until you have the data
-                          ),
-                          const SizedBox(height: 16),
-                          
-                          // Booth Dropdown (placeholder)
-                          FormUtils.buildDropdownField<int?>(
-                            value: selectedBooth,
-                            labelText: 'Booth',
-                            items: const [], // Add actual data here later
-                            onChanged: (value) {}, // Disabled until you have the data
-                          ),
-                          const SizedBox(height: 16),
-                          
-                          // Local Body Dropdown (placeholder)
-                          FormUtils.buildDropdownField<int?>(
-                            value: selectedLocalBody,
-                            labelText: 'Local Body',
-                            items: const [], // Add actual data here later
-                            onChanged: (value) {}, // Disabled until you have the data
-                          ),
-                          const SizedBox(height: 16),
-                          
-                          // Ward Dropdown (placeholder)
-                          FormUtils.buildDropdownField<int?>(
-                            value: selectedWard,
-                            labelText: 'Ward',
-                            items: const [], // Add actual data here later
-                            onChanged: (value) {}, // Disabled until you have the data
-                          ),
-                          const SizedBox(height: 32),
-                          */
 
                           // Tags Section - Using AddTagsWidget
                           AddTagsWidget(

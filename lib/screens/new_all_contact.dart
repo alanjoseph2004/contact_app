@@ -32,6 +32,8 @@ class _NewAllContactPageState extends State<NewAllContactPage> {
   List<Map<String, dynamic>> _primaryContacts = [];
   List<Map<String, dynamic>> _districts = [];
   List<Map<String, dynamic>> _assemblyConstituencies = [];
+  List<Map<String, dynamic>> _partyBlocks = [];
+  List<Map<String, dynamic>> _partyConstituencies = [];
   List<Map<String, dynamic>> _parliamentaryConstituencies = [];
   List<Map<String, dynamic>> _tagCategories = [];
   List<Map<String, dynamic>> _tags = [];
@@ -40,9 +42,9 @@ class _NewAllContactPageState extends State<NewAllContactPage> {
   int? _selectedReferredBy;
   int? _selectedDistrict;
   int? _selectedAssemblyConstituency;
+  int? _selectedPartyBlock;
+  int? _selectedPartyConstituency;
   int? _selectedParliamentaryConstituency;
-  // int? _selectedPartyBlock;
-  // int? _selectedPartyConstituency;
   // int? _selectedBooth;
   // int? _selectedLocalBody;
   // int? _selectedWard;
@@ -119,12 +121,60 @@ class _NewAllContactPageState extends State<NewAllContactPage> {
       setState(() {
         _assemblyConstituencies = constituencies;
         _selectedAssemblyConstituency = null; // Reset selection
+        // Reset dependent dropdowns
+        _partyBlocks = [];
+        _selectedPartyBlock = null;
+        _partyConstituencies = [];
+        _selectedPartyConstituency = null;
       });
     } catch (e) {
       print('Exception in _fetchAssemblyConstituencies: $e');
       setState(() {
         _assemblyConstituencies = [];
         _selectedAssemblyConstituency = null;
+        _partyBlocks = [];
+        _selectedPartyBlock = null;
+        _partyConstituencies = [];
+        _selectedPartyConstituency = null;
+      });
+    }
+  }
+
+  // Fetch party blocks for selected assembly constituency
+  Future<void> _fetchPartyBlocks(int districtId, int assemblyConstituencyId) async {
+    try {
+      final partyBlocks = await NewAllContactService.fetchPartyBlocks(districtId, assemblyConstituencyId);
+      setState(() {
+        _partyBlocks = partyBlocks;
+        _selectedPartyBlock = null; // Reset selection
+        // Reset dependent dropdowns
+        _partyConstituencies = [];
+        _selectedPartyConstituency = null;
+      });
+    } catch (e) {
+      print('Exception in _fetchPartyBlocks: $e');
+      setState(() {
+        _partyBlocks = [];
+        _selectedPartyBlock = null;
+        _partyConstituencies = [];
+        _selectedPartyConstituency = null;
+      });
+    }
+  }
+
+  // Fetch party constituencies for selected party block
+  Future<void> _fetchPartyConstituencies(int districtId, int assemblyConstituencyId, int partyBlockId) async {
+    try {
+      final partyConstituencies = await NewAllContactService.fetchPartyConstituencies(districtId, assemblyConstituencyId, partyBlockId);
+      setState(() {
+        _partyConstituencies = partyConstituencies;
+        _selectedPartyConstituency = null; // Reset selection
+      });
+    } catch (e) {
+      print('Exception in _fetchPartyConstituencies: $e');
+      setState(() {
+        _partyConstituencies = [];
+        _selectedPartyConstituency = null;
       });
     }
   }
@@ -163,6 +213,36 @@ class _NewAllContactPageState extends State<NewAllContactPage> {
       setState(() {
         _assemblyConstituencies = [];
         _selectedAssemblyConstituency = null;
+        _partyBlocks = [];
+        _selectedPartyBlock = null;
+        _partyConstituencies = [];
+        _selectedPartyConstituency = null;
+      });
+    }
+  }
+
+  // Update available party blocks when assembly constituency is selected
+  void _updatePartyBlocks() {
+    if (_selectedDistrict != null && _selectedAssemblyConstituency != null) {
+      _fetchPartyBlocks(_selectedDistrict!, _selectedAssemblyConstituency!);
+    } else {
+      setState(() {
+        _partyBlocks = [];
+        _selectedPartyBlock = null;
+        _partyConstituencies = [];
+        _selectedPartyConstituency = null;
+      });
+    }
+  }
+
+  // Update available party constituencies when party block is selected
+  void _updatePartyConstituencies() {
+    if (_selectedDistrict != null && _selectedAssemblyConstituency != null && _selectedPartyBlock != null) {
+      _fetchPartyConstituencies(_selectedDistrict!, _selectedAssemblyConstituency!, _selectedPartyBlock!);
+    } else {
+      setState(() {
+        _partyConstituencies = [];
+        _selectedPartyConstituency = null;
       });
     }
   }
@@ -260,8 +340,8 @@ class _NewAllContactPageState extends State<NewAllContactPage> {
           note: _noteController.text.isEmpty ? null : _noteController.text,
           districtId: _selectedDistrict!,
           assemblyConstituencyId: _selectedAssemblyConstituency!,
-          // partyBlockId: _selectedPartyBlock,
-          // partyConstituencyId: _selectedPartyConstituency,
+          partyBlockId: _selectedPartyBlock,
+          partyConstituencyId: _selectedPartyConstituency,
           // boothId: _selectedBooth,
           parliamentaryConstituencyId: _selectedParliamentaryConstituency,
           // localBodyId: _selectedLocalBody,
@@ -327,9 +407,9 @@ class _NewAllContactPageState extends State<NewAllContactPage> {
       selectedReferredBy: _selectedReferredBy,
       selectedDistrict: _selectedDistrict,
       selectedAssemblyConstituency: _selectedAssemblyConstituency,
+      selectedPartyBlock: _selectedPartyBlock,
+      selectedPartyConstituency: _selectedPartyConstituency,
       selectedParliamentaryConstituency: _selectedParliamentaryConstituency,
-      // selectedPartyBlock: _selectedPartyBlock,
-      // selectedPartyConstituency: _selectedPartyConstituency,
       // selectedBooth: _selectedBooth,
       // selectedLocalBody: _selectedLocalBody,
       // selectedWard: _selectedWard,
@@ -339,6 +419,8 @@ class _NewAllContactPageState extends State<NewAllContactPage> {
       primaryContacts: _primaryContacts,
       districts: _districts,
       assemblyConstituencies: _assemblyConstituencies,
+      partyBlocks: _partyBlocks,
+      partyConstituencies: _partyConstituencies,
       parliamentaryConstituencies: _parliamentaryConstituencies,
       tagCategories: _tagCategories,
       tags: _tags,
@@ -349,10 +431,20 @@ class _NewAllContactPageState extends State<NewAllContactPage> {
           _updateAssemblyConstituencies();
         });
       },
-      onAssemblyConstituencyChanged: (value) => setState(() => _selectedAssemblyConstituency = value),
+      onAssemblyConstituencyChanged: (value) {
+        setState(() {
+          _selectedAssemblyConstituency = value;
+          _updatePartyBlocks();
+        });
+      },
+      onPartyBlockChanged: (value) {
+        setState(() {
+          _selectedPartyBlock = value;
+          _updatePartyConstituencies();
+        });
+      },
+      onPartyConstituencyChanged: (value) => setState(() => _selectedPartyConstituency = value),
       onParliamentaryConstituencyChanged: (value) => setState(() => _selectedParliamentaryConstituency = value),
-      // onPartyBlockChanged: (value) => setState(() => _selectedPartyBlock = value),
-      // onPartyConstituencyChanged: (value) => setState(() => _selectedPartyConstituency = value),
       // onBoothChanged: (value) => setState(() => _selectedBooth = value),
       // onLocalBodyChanged: (value) => setState(() => _selectedLocalBody = value),
       // onWardChanged: (value) => setState(() => _selectedWard = value),
