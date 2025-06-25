@@ -5,6 +5,8 @@ import 'new_primary_contact.dart';
 import 'new_all_contact.dart';
 import 'detailed_contact.dart';
 import 'new_bulk_contact.dart';
+import '../services/ui_service.dart';
+import '../services/contact_service.dart' as contact_service;
 
 class ContactsPage extends StatefulWidget {
   const ContactsPage({super.key});
@@ -46,6 +48,75 @@ class _ContactsPageState extends State<ContactsPage> {
       (isLoading) => setState(() => _isLoading = isLoading),
       (contacts) => setState(() => _contacts = contacts)
     );
+  }
+
+  // Handle call functionality
+  Future<void> _handleCall(Contact contact) async {
+    final success = await contact_service.ContactService.makeCall(contact.phoneNumber);
+    
+    if (!success) {
+      if (mounted) {
+        UIService.showErrorSnackBar(
+          context, 
+          'Unable to make call to ${contact.name}'
+        );
+      }
+    }
+  }
+
+  // Handle messaging functionality - show options for WhatsApp or SMS
+  Future<void> _handleMessage(Contact contact) async {
+    final option = await UIService.showOptionsBottomSheet<String>(
+      context,
+      title: 'Send Message to ${contact.name}',
+      options: [
+        const BottomSheetOption<String>(
+          icon: Icons.message,
+          title: 'WhatsApp',
+          subtitle: 'Send via WhatsApp',
+          value: 'whatsapp',
+          color: Color(0xFF25D366),
+        ),
+        const BottomSheetOption<String>(
+          icon: Icons.sms,
+          title: 'SMS',
+          subtitle: 'Send text message',
+          value: 'sms',
+          color: Color(0xFF4285F4),
+        ),
+      ],
+    );
+
+    if (option != null && mounted) {
+      bool success = false;
+      
+      if (option == 'whatsapp') {
+        // Check if WhatsApp is available
+        final isWhatsAppAvailable = await contact_service.ContactService.isWhatsAppAvailable();
+        if (isWhatsAppAvailable) {
+          success = await contact_service.ContactService.sendWhatsAppMessage(contact.phoneNumber);
+          if (!success) {
+            UIService.showErrorSnackBar(
+              context, 
+              'Unable to open WhatsApp for ${contact.name}'
+            );
+          }
+        } else {
+          UIService.showErrorSnackBar(
+            context, 
+            'WhatsApp is not installed on this device'
+          );
+        }
+      } else if (option == 'sms') {
+        success = await contact_service.ContactService.sendSMS(contact.phoneNumber);
+        if (!success) {
+          UIService.showErrorSnackBar(
+            context, 
+            'Unable to send SMS to ${contact.name}'
+          );
+        }
+      }
+    }
   }
 
   // Build individual contact list with proper structure
@@ -324,9 +395,7 @@ class _ContactsPageState extends State<ContactsPage> {
                       color: Colors.transparent,
                       child: InkWell(
                         borderRadius: BorderRadius.circular(25),
-                        onTap: () {
-                          // Implement message functionality
-                        },
+                        onTap: () => _handleMessage(contact),
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
@@ -349,9 +418,7 @@ class _ContactsPageState extends State<ContactsPage> {
                       borderRadius: BorderRadius.circular(25),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(25),
-                        onTap: () {
-                          // Implement call functionality
-                        },
+                        onTap: () => _handleCall(contact),
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           child: const Icon(
