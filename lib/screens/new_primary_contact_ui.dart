@@ -373,46 +373,46 @@ class NewPrimaryContactUI extends StatelessWidget {
                           ),
                           const SizedBox(height: 16),
 
-                          // Party Constituency Dropdown (Optional)
-                          Stack(
-                            children: [
-                              SizedBox(
-                                height: 49,
-                                child: FormUtils.buildDropdownField<int?>(
-                                  value: selectedPartyConstituency,
-                                  labelText: 'Party Constituency',
-                                  items: partyConstituencies.map((partyConstituency) {
-                                    return DropdownMenuItem<int?>(
-                                      value: partyConstituency['id'],
-                                      child: Text(
-                                        partyConstituency['name'],
-                                        style: const TextStyle(
-                                          fontFamily: 'Inter',
-                                          fontWeight: FontWeight.w400,
-                                        ),
-                                      ),
-                                    );
-                                  }).toList(),
-                                  onChanged: partyConstituencies.isEmpty || isLoadingPartyConstituencies
-                                      ? (value) {}
-                                      : onPartyConstituencyChanged,
-                                ),
-                              ),
-                              if (isLoadingPartyConstituencies)
-                                const Positioned(
-                                  right: 12,
-                                  top: 12,
-                                  child: SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
+                          // // Party Constituency Dropdown (Optional)
+                          // Stack(
+                          //   children: [
+                          //     SizedBox(
+                          //       height: 49,
+                          //       child: FormUtils.buildDropdownField<int?>(
+                          //         value: selectedPartyConstituency,
+                          //         labelText: 'Party Constituency',
+                          //         items: partyConstituencies.map((partyConstituency) {
+                          //           return DropdownMenuItem<int?>(
+                          //             value: partyConstituency['id'],
+                          //             child: Text(
+                          //               partyConstituency['name'],
+                          //               style: const TextStyle(
+                          //                 fontFamily: 'Inter',
+                          //                 fontWeight: FontWeight.w400,
+                          //               ),
+                          //             ),
+                          //           );
+                          //         }).toList(),
+                          //         onChanged: partyConstituencies.isEmpty || isLoadingPartyConstituencies
+                          //             ? (value) {}
+                          //             : onPartyConstituencyChanged,
+                          //       ),
+                          //     ),
+                          //     if (isLoadingPartyConstituencies)
+                          //       const Positioned(
+                          //         right: 12,
+                          //         top: 12,
+                          //         child: SizedBox(
+                          //           width: 20,
+                          //           height: 20,
+                          //           child: CircularProgressIndicator(
+                          //             strokeWidth: 2,
+                          //           ),
+                          //         ),
+                          //       ),
+                          //   ],
+                          // ),
+                          // const SizedBox(height: 16),
 
                           // Parliamentary Constituency Dropdown (Optional)
                           SizedBox(
@@ -523,7 +523,6 @@ class NewPrimaryContactUI extends StatelessWidget {
                           SaveButtonWidget(
                             onPressed: onSave, // Changed from onSave to onPressed
                             isLoading: isLoading,
-                            backgroundColor: primaryColor, // Use backgroundColor instead of primaryColor
                             buttonText: 'Save Contact', // Optional: customize button text
                             loadingText: 'Saving...', // Optional: customize loading text
                           ),

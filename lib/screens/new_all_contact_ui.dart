@@ -303,27 +303,27 @@ class NewAllContactUI extends StatelessWidget {
                           ),
                           const SizedBox(height: 16),
                           
-                          // Party Constituency Dropdown
-                          FormUtils.buildDropdownField<int?>(
-                            value: selectedPartyConstituency,
-                            labelText: 'Party Constituency',
-                            items: partyConstituencies.map((partyConstituency) {
-                              return DropdownMenuItem<int?>(
-                                value: partyConstituency['id'],
-                                child: Text(
-                                  partyConstituency['name'] ?? 'Unknown',
-                                  style: const TextStyle(
-                                    fontFamily: 'Inter',
-                                    fontWeight: FontWeight.w400,
-                                    fontSize: 16,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: selectedPartyBlock != null ? onPartyConstituencyChanged : (value) {},
-                          ),
-                          const SizedBox(height: 16),
+                          // // Party Constituency Dropdown
+                          // FormUtils.buildDropdownField<int?>(
+                          //   value: selectedPartyConstituency,
+                          //   labelText: 'Party Constituency',
+                          //   items: partyConstituencies.map((partyConstituency) {
+                          //     return DropdownMenuItem<int?>(
+                          //       value: partyConstituency['id'],
+                          //       child: Text(
+                          //         partyConstituency['name'] ?? 'Unknown',
+                          //         style: const TextStyle(
+                          //           fontFamily: 'Inter',
+                          //           fontWeight: FontWeight.w400,
+                          //           fontSize: 16,
+                          //           color: Colors.black87,
+                          //         ),
+                          //       ),
+                          //     );
+                          //   }).toList(),
+                          //   onChanged: selectedPartyBlock != null ? onPartyConstituencyChanged : (value) {},
+                          // ),
+                          // const SizedBox(height: 16),
                           
                           // Parliamentary Constituency Dropdown
                           FormUtils.buildDropdownField<int?>(
