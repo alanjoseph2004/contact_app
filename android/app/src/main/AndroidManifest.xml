@@ -45,7 +45,7 @@
     </queries>
 
     <application
-        android:label="your_app_name"
+        android:label="contact_app"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         
