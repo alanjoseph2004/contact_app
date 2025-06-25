@@ -6,7 +6,7 @@ import '../screens/contact_logic.dart';
 
 class ContactApiService {
   // API endpoints
-  static const String _apiBaseUrl = 'http://51.21.152.136:8000';
+  static const String _apiBaseUrl = 'https://contact.krisko.in';
   static const String _allContactsEndpoint = '$_apiBaseUrl/contact/all-contacts/';
   static const String _primaryContactsEndpoint = '$_apiBaseUrl/contact/all-primary-contacts/';
   static const String _timedAllContactsEndpoint = '$_apiBaseUrl/contact/contacts/timed-retrieval/';

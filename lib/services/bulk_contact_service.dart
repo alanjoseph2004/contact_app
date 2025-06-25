@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ContactApiService {
-  static const String baseUrl = 'http://51.21.152.136:8000';
+  static const String baseUrl = 'https://contact.krisko.in';
   
   // Get JWT token from SharedPreferences
   Future<String?> _getToken() async {

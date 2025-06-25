@@ -4,7 +4,7 @@
 // import '../screens/contact_logic.dart';
 
 // class EditAllContactService {
-//   static const String baseUrl = 'http://51.21.152.136:8000/contact';
+//   static const String baseUrl = 'https://contact.krisko.in';
   
 //   // Get JWT token from SharedPreferences
 //   Future<String> _getToken() async {
