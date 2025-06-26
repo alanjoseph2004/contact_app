@@ -541,6 +541,14 @@ class _DetailedContactAllPageState extends State<DetailedContactAllPage> {
                         // Local Body information
                         if (_getDisplayValue('local_body') != null)
                           _buildDetailRow('Local Body', _getDisplayValue('local_body')!),
+
+                        // Party Block information
+                        if (_getDisplayValue('party_block') != null)
+                          _buildDetailRow('Party Block', _getDisplayValue('party_block')!),
+
+                        // Party Constituency information
+                        // if (_getDisplayValue('party_constituency') != null)
+                        //  _buildDetailRow('Party Constituency', _getDisplayValue('party_constituency')!),    
                         
                         // Ward information
                         if (_contact.ward != null)
