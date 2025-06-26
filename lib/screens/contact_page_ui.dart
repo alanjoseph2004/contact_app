@@ -3,7 +3,8 @@ import 'contact_logic.dart';
 import 'contact_page.dart';
 import 'new_primary_contact.dart';
 import 'new_all_contact.dart';
-import 'detailed_contact.dart';
+import 'detailed_contact_primary.dart';  // Import for primary contacts
+import 'detailed_contact_all.dart';      // Import for all contacts
 import 'new_bulk_contact.dart';
 import '../services/ui_service.dart';
 import '../services/contact_service.dart' as contact_service;
@@ -117,6 +118,24 @@ class _ContactsPageState extends State<ContactsPage> {
         }
       }
     }
+  }
+
+  // Navigate to appropriate detailed contact page based on selected tab
+  void _navigateToDetailedContact(Contact contact) {
+    Widget detailedPage;
+    
+    if (_selectedTab == ContactType.primary) {
+      detailedPage = DetailedContactPrimaryPage(contact: contact);
+    } else {
+      detailedPage = DetailedContactAllPage(contact: contact);
+    }
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => detailedPage),
+    ).then((_) {
+      _loadContacts(); // Refresh contacts when returning
+    });
   }
 
   // Build individual contact list with proper structure
@@ -307,16 +326,7 @@ class _ContactsPageState extends State<ContactsPage> {
     return Column(
       children: [
         InkWell(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => DetailedContactPage(contact: contact),
-              ),
-            ).then((_) {
-              _loadContacts();
-            });
-          },
+          onTap: () => _navigateToDetailedContact(contact), // Use the new navigation method
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Row(

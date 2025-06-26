@@ -5,24 +5,23 @@ import 'contact_logic.dart';
 import '../services/contact_service.dart' as contact_service;
 import '../services/ui_service.dart';
 
-class DetailedContactPage extends StatefulWidget {
+class DetailedContactPrimaryPage extends StatefulWidget {
   final Contact contact;
 
-  const DetailedContactPage({
+  const DetailedContactPrimaryPage({
     super.key,
     required this.contact,
   });
 
   @override
-  State<DetailedContactPage> createState() => _DetailedContactPageState();
+  State<DetailedContactPrimaryPage> createState() => _DetailedContactPrimaryPageState();
 }
 
-class _DetailedContactPageState extends State<DetailedContactPage> {
+class _DetailedContactPrimaryPageState extends State<DetailedContactPrimaryPage> {
   late Contact _contact;
   bool _isLoading = false;
   String? _errorMessage;
   Map<String, dynamic>? _primaryContactData;
-  Map<String, dynamic>? _allContactData;
   
   // Updated to match contacts page color scheme
   static const Color _primaryBlue = Color(0xFF4285F4);
@@ -46,11 +45,7 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
     });
 
     try {
-      // Make both API calls concurrently
-      await Future.wait([
-        _fetchPrimaryContactData(),
-        _fetchAllContactData(),
-      ]);
+      await _fetchPrimaryContactData();
 
       // Update the contact with the fetched data
       setState(() {
@@ -85,33 +80,9 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
     }
   }
 
-  Future<void> _fetchAllContactData() async {
-    try {
-      final response = await http.get(
-        Uri.parse('https://contact.krisko.in/contact/contact/${_contact.id}/'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        _allContactData = json.decode(response.body);
-      } else {
-        debugPrint('All contact API failed with status: ${response.statusCode}');
-      }
-    } catch (e) {
-      debugPrint('Error fetching all contact: $e');
-    }
-  }
-
   Contact _mergeContactData() {
     // Start with the original contact
     Contact mergedContact = _contact;
-
-    // If we have all contact data, use it as the primary source
-    if (_allContactData != null) {
-      mergedContact = _parseAllContactResponse(_allContactData!);
-    }
 
     // If we have primary contact data, merge it
     if (_primaryContactData != null) {
@@ -119,38 +90,6 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
     }
 
     return mergedContact;
-  }
-
-  Contact _parseAllContactResponse(Map<String, dynamic> data) {
-    final referredByData = data['referred_by'] as Map<String, dynamic>?;
-    
-    return Contact(
-      id: _safeParseInt(data['id'])!,
-      referredBy: _safeParseInt(referredByData?['referred_id']),
-      firstName: data['first_name']?.toString() ?? '',
-      lastName: data['last_name']?.toString(),
-      email: data['email']?.toString(),
-      countryCode: _parseCountryCode(data['country_code']),
-      phone: data['phone']?.toString() ?? '',
-      note: data['note']?.toString(),
-      district: _extractNestedIntValue(data['district']),
-      assemblyConstituency: _extractNestedIntValue(data['assembly_constituency']),
-      partyBlock: _extractNestedIntValue(data['party_block']),
-      partyConstituency: _extractNestedIntValue(data['party_constituency']),
-      booth: _extractNestedIntValue(data['booth']),
-      parliamentaryConstituency: _extractNestedIntValue(data['parliamentary_constituency']),
-      localBody: _extractNestedIntValue(data['local_body']),
-      ward: _extractNestedIntValue(data['ward']),
-      houseName: data['house_name']?.toString(),
-      houseNumber: _safeParseInt(data['house_number']),
-      city: data['city']?.toString(),
-      postOffice: data['post_office']?.toString(),
-      pinCode: data['pin_code']?.toString(),
-      tags: _extractTagIds(data['tags']),
-      isPrimaryContact: data['is_primary_contact'] == true,
-      type: data['is_primary_contact'] == true ? ContactType.primary : ContactType.all,
-      referralDetails: referredByData,
-    );
   }
 
   Contact _mergePrimaryContactData(Contact baseContact, Map<String, dynamic> primaryData) {
@@ -164,6 +103,20 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
         primaryContactId: _safeParseInt(primaryData['id']),
         type: ContactType.primary,
         isPrimaryContact: true,
+        // Update other fields from contact data if needed
+        firstName: contactData['first_name']?.toString() ?? baseContact.firstName,
+        lastName: contactData['last_name']?.toString() ?? baseContact.lastName,
+        email: contactData['email']?.toString() ?? baseContact.email,
+        phone: contactData['phone']?.toString() ?? baseContact.phone,
+        district: _extractNestedIntValue(contactData['district']) ?? baseContact.district,
+        assemblyConstituency: _extractNestedIntValue(contactData['assembly_constituency']) ?? baseContact.assemblyConstituency,
+        partyBlock: _extractNestedIntValue(contactData['party_block']) ?? baseContact.partyBlock,
+        partyConstituency: _extractNestedIntValue(contactData['party_constituency']) ?? baseContact.partyConstituency,
+        booth: _extractNestedIntValue(contactData['booth']) ?? baseContact.booth,
+        parliamentaryConstituency: _extractNestedIntValue(contactData['parliamentary_constituency']) ?? baseContact.parliamentaryConstituency,
+        localBody: _extractNestedIntValue(contactData['local_body']) ?? baseContact.localBody,
+        ward: _extractNestedIntValue(contactData['ward']) ?? baseContact.ward,
+        tags: _extractTagIds(contactData['tags']) ?? baseContact.tags,
       );
     }
     
@@ -185,16 +138,6 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
     return null;
   }
 
-  // Helper method to parse country code, removing + if present
-  String _parseCountryCode(dynamic countryCode) {
-    if (countryCode == null) return '91'; // Default
-    String code = countryCode.toString();
-    if (code.startsWith('+')) {
-      code = code.substring(1);
-    }
-    return code;
-  }
-
   // Helper method to extract integer values from nested objects
   int? _extractNestedIntValue(dynamic field) {
     if (field == null) return null;
@@ -207,16 +150,6 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
       }
     }
     return _safeParseInt(field);
-  }
-
-  // Helper method to extract string values from nested objects
-  dynamic _extractNestedValue(dynamic field, String key) {
-    if (field is Map<String, dynamic>) {
-      return field[key];
-    } else if (field is int) {
-      return field;
-    }
-    return null;
   }
 
   List<int>? _extractTagIds(dynamic tagsData) {
@@ -433,7 +366,7 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Merged profile header with quick actions
+                  // Profile header with quick actions
                   Container(
                     margin: const EdgeInsets.all(16),
                     padding: const EdgeInsets.all(20),
@@ -453,7 +386,7 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
                         // Profile section
                         Row(
                           children: [
-                            // Avatar - updated to match contacts page style
+                            // Avatar
                             CircleAvatar(
                               backgroundColor: _primaryBlue.withOpacity(0.1),
                               backgroundImage: _contact.avatarUrl != null ? NetworkImage(_contact.avatarUrl!) : null,
@@ -519,8 +452,8 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
                                 ],
                               ),
                             ),
-                            // Priority number (for primary contacts)
-                            if (_contact.isPrimaryContact && _contact.priority != null)
+                            // Priority number
+                            if (_contact.priority != null)
                               Container(
                                 width: 32,
                                 height: 32,
@@ -545,7 +478,7 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
                         
                         const SizedBox(height: 14),
                         
-                        // Divider - updated color
+                        // Divider
                         Container(
                           height: 1,
                           color: _dividerColor,
@@ -639,55 +572,53 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
                     ),
                   ),
 
-                  // Primary Contact Information (if available)
-                  if (_contact.isPrimaryContact || _primaryContactData != null) ...[
-                    Container(
-                      width: double.infinity,
-                      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: _backgroundColor,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Primary Contact Information',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: _textPrimary,
-                              fontFamily: 'Inter',
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          
-                          // Priority
-                          if (_contact.priority != null)
-                            _buildDetailRow('Priority', '${_contact.priority}'),
-                          
-                          // Connection information
-                          if (_contact.connection != null && _contact.connection!.isNotEmpty)
-                            _buildDetailRow('Connection', _contact.connection!),
-                          
-                          // Party information
-                          if (_getDisplayValue('party_block') != null)
-                            _buildDetailRow('Party Block', _getDisplayValue('party_block')!),
-                          
-                          if (_getDisplayValue('party_constituency') != null)
-                            _buildDetailRow('Party Constituency', _getDisplayValue('party_constituency')!),
-                        ],
-                      ),
+                  // Primary Contact Information
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: _backgroundColor,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                  ],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Primary Contact Information',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: _textPrimary,
+                            fontFamily: 'Inter',
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        // Priority
+                        if (_contact.priority != null)
+                          _buildDetailRow('Priority', '${_contact.priority}'),
+                        
+                        // Connection information
+                        if (_contact.connection != null && _contact.connection!.isNotEmpty)
+                          _buildDetailRow('Connection', _contact.connection!),
+                        
+                        // Party information
+                        if (_getDisplayValue('party_block') != null)
+                          _buildDetailRow('Party Block', _getDisplayValue('party_block')!),
+                        
+                        if (_getDisplayValue('party_constituency') != null)
+                          _buildDetailRow('Party Constituency', _getDisplayValue('party_constituency')!),
+                      ],
+                    ),
+                  ),
 
                   // Tags Section
                   if (_hasValidTags()) ...[
@@ -725,55 +656,6 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
                             runSpacing: 8,
                             children: _getTagWidgets(),
                           ),
-                        ],
-                      ),
-                    ),
-                  ],
-
-                  // Referral Information (for All Contacts)
-                  if (_contact.referralDetails != null) ...[
-                    Container(
-                      width: double.infinity,
-                      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: _backgroundColor,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Referral Information',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: _textPrimary,
-                              fontFamily: 'Inter',
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          
-                          // Referral ID
-                          if (_contact.referralDetails!['referred_id'] != null)
-                            _buildDetailRow('Referred by ID', _contact.referralDetails!['referred_id'].toString()),
-                          
-                          // Referral Name
-                          if (_contact.referralDetails!['referred_first_name'] != null)
-                            _buildDetailRow('Referred by Name', 
-                              '${_contact.referralDetails!['referred_first_name']} ${_contact.referralDetails!['referred_last_name'] ?? ''}'),
-                          
-                          // Referral Phone
-                          if (_contact.referralDetails!['referred_phone'] != null)
-                            _buildDetailRow('Referral Phone', 
-                              '${_contact.referralDetails!['referred_country_code'] ?? ''} ${_contact.referralDetails!['referred_phone'] ?? ''}'),
                         ],
                       ),
                     ),
@@ -827,16 +709,7 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
   }
 
   String? _getDisplayValue(String field) {
-    // First check if we have the data from API responses
-    if (_allContactData != null && _allContactData![field] != null) {
-      final fieldData = _allContactData![field];
-      if (fieldData is Map<String, dynamic>) {
-        return fieldData[field]?.toString();
-      } else if (fieldData is String || fieldData is int) {
-        return fieldData.toString();
-      }
-    }
-    
+    // Check if we have the data from API response
     if (_primaryContactData != null && 
         _primaryContactData!['contact'] != null && 
         _primaryContactData!['contact'][field] != null) {
@@ -852,12 +725,7 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
   }
 
   bool _hasValidTags() {
-    // Check for tags in API responses
-    if (_allContactData != null && _allContactData!['tags'] is List) {
-      final tags = _allContactData!['tags'] as List;
-      return tags.isNotEmpty;
-    }
-    
+    // Check for tags in API response
     if (_primaryContactData != null && 
         _primaryContactData!['contact'] != null &&
         _primaryContactData!['contact']['tags'] is List) {
@@ -871,10 +739,8 @@ class _DetailedContactPageState extends State<DetailedContactPage> {
   List<Widget> _getTagWidgets() {
     List<dynamic> tags = [];
     
-    // Get tags from API responses
-    if (_allContactData != null && _allContactData!['tags'] is List) {
-      tags = _allContactData!['tags'] as List;
-    } else if (_primaryContactData != null && 
+    // Get tags from API response
+    if (_primaryContactData != null && 
                _primaryContactData!['contact'] != null &&
                _primaryContactData!['contact']['tags'] is List) {
       tags = _primaryContactData!['contact']['tags'] as List;
