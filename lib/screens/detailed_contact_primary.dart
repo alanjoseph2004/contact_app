@@ -545,6 +545,10 @@ class _DetailedContactPrimaryPageState extends State<DetailedContactPrimaryPage>
                         if (_getDisplayValue('assembly_constituency') != null)
                           _buildDetailRow('Assembly Constituency', _getDisplayValue('assembly_constituency')!),
                         
+                        // Party Block information - moved here from Primary Contact Information
+                        if (_getDisplayValue('party_block') != null)
+                          _buildDetailRow('Party Block', _getDisplayValue('party_block')!),
+                        
                         // Parliamentary Constituency information
                         if (_getDisplayValue('parliamentary_constituency') != null)
                           _buildDetailRow('Parliamentary Constituency', _getDisplayValue('parliamentary_constituency')!),
@@ -610,10 +614,7 @@ class _DetailedContactPrimaryPageState extends State<DetailedContactPrimaryPage>
                         if (_contact.connection != null && _contact.connection!.isNotEmpty)
                           _buildDetailRow('Connection', _contact.connection!),
                         
-                        // Party information
-                        if (_getDisplayValue('party_block') != null)
-                          _buildDetailRow('Party Block', _getDisplayValue('party_block')!),
-                        
+                        // Party Constituency information - kept here
                         if (_getDisplayValue('party_constituency') != null)
                           _buildDetailRow('Party Constituency', _getDisplayValue('party_constituency')!),
                       ],
